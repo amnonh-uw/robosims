@@ -1,0 +1,17 @@
+ENV_BUILD_DARWIN: projects/Bedroom04/builds/bedroom_04-OSXIntel64.app
+ENV_BUILD_LINUX: unity/builds/living-room-Linux64
+TRAIN_PHASE: True
+X_DISPLAY: "0.0"
+
+# Training should go as fast as possible
+TRAIN_ACTION_LENGTH: 1
+TRAIN_WALK_VELOCITY: 30.0
+TRAIN_TURN_VELOCITY: 30.0
+
+# Test should go as fast as possible
+TEST_ACTION_LENGTH: 30
+TEST_WALK_VELOCITY: 1.0
+TEST_TURN_VELOCITY: 1.0
+
+AGENT_RADIUS: 0.5
+SERVER_SIDE_SCREENSHOT: False
