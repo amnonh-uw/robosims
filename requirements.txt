@@ -9,3 +9,4 @@ Pillow
 xcffib
 cffi
 mss
+images2jpf
