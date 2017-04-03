@@ -1,4 +1,4 @@
-from .kaffe.tensorflow import Network
+from networks.kaffe.tensorflow import Network
 import tensorflow as tf
 
 class GoogLeNet(Network):
