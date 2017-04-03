@@ -122,7 +122,7 @@ EndSection
 """
     screen_records = []
     for i, device in enumerate(devices):
-        bus_id = 'PCI:' + ':'.join(map(lambda x: str(int(x)), re.split(r'[:\.]', device['Slot'])))
+        bus_id = 'PCI:' + ':'.join(map(lambda x: str(int(x, 16)), re.split(r'[:\.]', device['Slot'])))
         xorg_conf.append(device_section.format(device_id=i, bus_id=bus_id))
         xorg_conf.append(screen_section.format(device_id=i, screen_id=i))
         screen_records.append('Screen {screen_id} "Screen{screen_id}" 0 0'.format(screen_id=i))
@@ -132,11 +132,12 @@ EndSection
     return "\n".join(xorg_conf)
 
 @task
-def startx(context, display=5):
+def startx(context, display=15):
     if platform.system() != 'Linux':
         raise Exception("Can only run startx on linux")
     records = list(filter(lambda r: r.get('Vendor', '') == 'NVIDIA Corporation' and r['Class'] == 'VGA compatible controller', pci_records()))
 
+    print(records)
     if not records:
         raise Exception("no nvidia cards found")
 
