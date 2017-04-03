@@ -1,0 +1,11 @@
+invoke
+boto3
+flask
+easydict
+pyyaml
+requests
+numpy
+Pillow
+xcffib
+cffi
+mss
