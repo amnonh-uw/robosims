@@ -47,9 +47,8 @@ class Direction_Model:
 
         s = ""
         for i in range(0,3):
-            if true_distance < 0.01:
-                s += str(round(delta[i]), 2) + "/"
-                        + str(round(true_direction[i], 1))
+            if true_direction[i] < 0.01:
+                s += str(round(delta[i], 2)) + "/" + str(round(true_direction[i], 2))
             else:
                 s += str(round(delta[i]/true_direction[i], 2) *100) + "%"
             if i != 2:

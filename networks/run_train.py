@@ -18,8 +18,7 @@ def run_train(args, model_cls):
         print("can't find data file for class {}".format(args.base_class))
         exit()
 
-    # learning_rate = 0.01
-    learning_rate = 1e-5
+    learning_rate = 1e-4
 
     cheat = False
     model = model_cls(args, cls, cheat=cheat, trainable=True)
@@ -60,7 +59,7 @@ def run_train(args, model_cls):
             num_losses = 0
             mean_loss = 999999.
     
-            while True:
+            for i in range(0, 40000):
                 env.new_episode()
                 episode_count += 1
                 t = env.get_state().target_buffer()
@@ -99,7 +98,7 @@ def run_train(args, model_cls):
                             model.pred_tensor()], feed_dict=feed_dict)
 
                 losses.put(loss)
-                if num_losses <= 1000:
+                if num_losses <= 100:
                     num_losses += 1
                 else:
                     losses.get()
@@ -117,13 +116,13 @@ def run_train(args, model_cls):
                         saver.save(sess,args.model_path+'/model-'+str(episode_count)+'.cptk')
                         print("Saved Model")
 
-                if episode_count % 2000 == 0:
+                if episode_count % 200 == 0:
                     print("loss running average {} vs chance loss {}".format(m, model.chance_loss()))
                     print("loss histogram")
                     ascii_hist(np.asarray(losses.queue), bins=50)
                     if m >= mean_loss:
                         print("mean loss stable at {}".format(m))
-                        break
+                        # break
                     else:
                         mean_loss = m
 
