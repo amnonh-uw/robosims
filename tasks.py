@@ -17,6 +17,8 @@ from learn_distance.train import train as distance_network_train
 from learn_direction.train import train as direction_network_train
 
 S3_BUCKET='ai2-vision-robosims'
+ENV="Bedroom_04"
+BUILDPATH="projects/Bedroom04/builds"
 
 def pci_records():
     records = []
@@ -45,38 +47,45 @@ def install_assets(context):
 @task
 def pull_linux_build(context, build_name):
 
-    filename = 'unity/builds/%s' % build_name
+    filename = BUILDPATH + '/%s' % build_name
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    if not os.path.isfile(filename):
-        s3 = boto3.resource('s3')
-        s3.meta.client.download_file(S3_BUCKET, 'builds/%s' % build_name, filename)
+    # if not os.path.isfile(filename):
+    #    s3 = boto3.resource('s3')
+    #    s3.meta.client.download_file(S3_BUCKET, 'builds/%s' % build_name, filename)
 
     zipf = zipfile.ZipFile(filename, 'r')
-    zipf.extractall(path='unity/builds')
+    zipf.extractall(path=BUILDPATH)
 
 
 @task
 def push_linux_build(context):
 
-    build_name = "living-room-Linux64-%s.zip" % (datetime.datetime.now().isoformat(),)
-    archive_name = "unity/builds/%s" % build_name
+    build_name = ENV + "-Linux64-%s.zip" % (datetime.datetime.now().isoformat(),)
+    archive_name = BUILDPATH + "/%s" % build_name
 
     zipf = zipfile.ZipFile(archive_name, 'w', zipfile.ZIP_DEFLATED)
 
-    for root, dirs, files in os.walk('unity/builds/living-room-Linux64_Data'):
+    data_path = BUILDPATH + "/" + ENV + '-Linux64_Data'
+    exec_path = BUILDPATH + "/" + ENV + '-Linux64'
+
+    for root, dirs, files in os.walk(data_path):
         for f in files:
             fn = os.path.join(root, f)
-            arcname = os.path.relpath(fn, 'unity/builds')
+            print(fn)
+            arcname = os.path.relpath(fn, BUILDPATH)
             zipf.write(fn, arcname)
 
-    zipf.write('unity/builds/living-room-Linux64', 'living-room-Linux64')
+    print(exec_path)
+    zipf.write(exec_path, ENV + '-Linux64')
     zipf.close()
 
-    s3 = boto3.resource('s3')
-    key = 'builds/%s' % (build_name,)
+    context.run("scp %s amnonh@ava:builds" % archive_name)
 
-    s3.Object(S3_BUCKET, key).put(Body=open(archive_name, 'rb'))
-    print("pushed build %s to %s" % (S3_BUCKET, build_name))
+    # s3 = boto3.resource('s3')
+    # key = 'builds/%s' % (build_name,)
+
+    # s3.Object(S3_BUCKET, key).put(Body=open(archive_name, 'rb'))
+    # print("pushed build %s to %s" % (S3_BUCKET, build_name))
 
 
 @task

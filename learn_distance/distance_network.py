@@ -46,10 +46,11 @@ class Distance_Model:
             pred_distance = pred_distance[0,0]
 
         true_distance = env.distance()
+        delta = true_distance - pred_distance
+
         if true_distance < 0.01:
             s = str(round(delta,2)) + "/" + str(round(true_distance, 2))
         else:
-            delta = true_distance - pred_distance
             s = str(round(delta/true_distance, 2) *100) + "%"
 
         return "error " + s

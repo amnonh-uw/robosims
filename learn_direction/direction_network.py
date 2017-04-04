@@ -36,7 +36,7 @@ class Direction_Model:
     def cheat_value(self, env):
         return 2 * self.true_value(env)
 
-    def accuracy_str(self, env, pred_direction):
+    def error_str(self, env, pred_direction):
         if pred_direction.size != 3:
             raise ValueError("accuracy excpects pred_value to be of size 1")
         if isinstance(pred_direction, np.ndarray):
@@ -47,11 +47,15 @@ class Direction_Model:
 
         s = ""
         for i in range(0,3):
-            s += str(round(delta[i]/true_direction[i], 2) *100) + "%"
+            if true_distance < 0.01:
+                s += str(round(delta[i]), 2) + "/"
+                        + str(round(true_direction[i], 1))
+            else:
+                s += str(round(delta[i]/true_direction[i], 2) *100) + "%"
             if i != 2:
                 s += ','
 
-        return s
+        return "error " + s
 
     def name(self):
         return "direction"
