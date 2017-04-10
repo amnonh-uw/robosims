@@ -15,6 +15,7 @@ import re
 from a3c.train import train as network_train
 from learn_distance.train import train as distance_network_train
 from learn_direction.train import train as direction_network_train
+from util.bfs import run_bfs
 
 S3_BUCKET='ai2-vision-robosims'
 ENV="Bedroom_04"
@@ -173,44 +174,33 @@ def build(context, osxintel64=False, linux64=False):
 
 
 @task
-def launch(context, port=0, start_unity=True):
-    # cfg_file = 'configs/cfg_bedroom04_navigation.yaml'
-    cfg_file = 'configs/cfg_bedroom04_drone.yaml'
-    #cfg_file = 'configs/cfg_livingroom_navigation.yaml'
-    env = UnityGame(cfg_file, port, start_unity)
-
-    # Do 10 trials
-    for i in range(10):
-        env.new_episode()
-
-    env.stop()
+def bfs(context, port=0, start_unity=True):
+    run_bfs(['--server-config=configs/cfg_bedroom04_drone.yaml'])
 
 @task
 def train(context, port=0, start_unity=True):
-    network_train(['--num_workers=1', '--config=configs/cfg_bedroom04_drone.yaml', '--initialize-weights=posenet.npy'])
-
-@task
-def quick_train(context, port=0, start_unity=True):
-    network_train(['--num_workers=1', '--config=configs/cfg_bedroom04_drone.yaml'])
-
-@task
-def quick_discrete_train(context, port=0, start_unity=True):
-    network_train(['--num_workers=1', '--config=configs/cfg_bedroom04_drone.yaml', '--discrete-actions'])
+    network_train(['--num_workers=1', '--server-config=configs/cfg_bedroom04_drone.yaml', '--initialize-weights=posenet.npy'])
 
 @task
 def discrete_train(context, port=0, start_unity=True):
-    network_train(['--num_workers=1', '--config=configs/cfg_bedroom04_drone.yaml', '--discrete-actions', '--initialize-weights=posenet.npy'])
+    network_train(['--num_workers=1', '--server-config=configs/cfg_bedroom04_drone.yaml', '--discrete-actions', '--initialize-weights=posenet.npy'])
 
 @task
 def train_distance(context, base_class="GoogleNet", port=0, start_unity=True):
     sys.path.append("./networks")
     print("training {}".format(base_class))
-    distance_network_train(['--config=configs/cfg_bedroom04_drone.yaml', 
-    '--load-base-weights',
-    '--max-distance-delta=0.1', '--max-rotation-delta=0', '--base-class='+ base_class])
+    distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
 
 @task
 def train_direction(context, base_class="GoogleNet", port=0, start_unity=True):
     sys.path.append("./networks")
     print("training {}".format(base_class))
-    direction_network_train(['--config=configs/cfg_bedroom04_drone.yaml', '--load-base-weights', '--max-distance-delta=0.1', '--max-rotation-delta=3', '--base-class='+ base_class])
+    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
+
+@task
+def test_direction(context, base_class="GoogleNet", port=0, start_unity=True):
+    sys.path.append("./networks")
+    print("testing  {}".format(base_class))
+    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml',
+    '--load-model',
+    '--test-only'])

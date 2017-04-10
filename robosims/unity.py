@@ -6,12 +6,13 @@ from robosims.actions import ActionBuilder
 
 class UnityGame:
     def __init__(self, args, port=0, start_unity = True):
-        self.controller = robosims.server.Controller(args.config)
+        self.controller = robosims.server.Controller(args.server_config)
         self.controller.start(port, start_unity)
-        self.args = args
+        self.conf = args.conf
 
         self.get_structure_info()
         random.seed()
+
     def close (self):
         print("stopping controller")
         self.controller.stop()
@@ -37,12 +38,12 @@ class UnityGame:
     def close_enough(self):
         b = True
 
-        b = b and self.one_close_enough(self.t_position['x'], self.s_position['x'], self.args.close_enough_distance)
-        b = b and self.one_close_enough(self.t_position['y'], self.s_position['y'], self.args.close_enough_distance)
-        b = b and self.one_close_enough(self.t_position['z'], self.s_position['z'], self.args.close_enough_distance)
-        b = b and self.one_close_enough(self.t_rotation['x'], self.s_rotation['x'], self.args.close_enough_rotation)
-        b = b and self.one_close_enough(self.t_rotation['y'], self.s_rotation['y'], self.args.close_enough_rotation)
-        b = b and self.one_close_enough(self.t_rotation['z'], self.s_rotation['z'], self.args.close_enough_rotation)
+        b = b and self.one_close_enough(self.t_position['x'], self.s_position['x'], self.conf.close_enough_distance)
+        b = b and self.one_close_enough(self.t_position['y'], self.s_position['y'], self.conf.close_enough_distance)
+        b = b and self.one_close_enough(self.t_position['z'], self.s_position['z'], self.conf.close_enough_distance)
+        b = b and self.one_close_enough(self.t_rotation['x'], self.s_rotation['x'], self.conf.close_enough_rotation)
+        b = b and self.one_close_enough(self.t_rotation['y'], self.s_rotation['y'], self.conf.close_enough_rotation)
+        b = b and self.one_close_enough(self.t_rotation['z'], self.s_rotation['z'], self.conf.close_enough_rotation)
 
         return b
 
@@ -60,10 +61,8 @@ class UnityGame:
         return self.episode_finished
 
     def step(self, action):
-        # print("Taking step {}".format(action));
         event = self.controller.step(action)
         controlCommand = event.metadata['controlCommand']
-        # print("step control Command returned {}".format(controlCommand))
         self.collision = event.metadata['collided']
         if self.collision:
             self.collidedObjects = event.metadata['collidedObjects']
@@ -72,34 +71,41 @@ class UnityGame:
         self.s_rotation = agent['rotation']
         # print("position {}".format(self.s_position))
         # print("rotation {}".format(self.s_rotation))
-        self.extract_source_position()
+        self.extract_source_pose()
         return event
+
+    def take_add_position_action(self, x, y, z):
+        action = ActionBuilder.addPosition(x, y, z)
+        return self.step(action)
+
+    def take_add_roation_action(self, rx, ry, rz):
+        action = ActionBuilder.addRotation(rx, ry, rz)
+        return self.step(action)
 
     def take_discrete_action(self, a):
         self.action_counter += 1
 
         if a == 0:
-            action = ActionBuilder.addPosition(0, 0, 0)
+            event = self.take_add_position_action(0, 0, 0)
         elif a == 1:
-            action = ActionBuilder.addPosition(self.args.discrete_action_distance, 0, 0)
+            event = self.take_add_position_action(self.conf.discrete_action_distance, 0, 0)
         elif a == 2:
-            action = ActionBuilder.addPosition(-self.args.discrete_action_distance, 0, 0)
+            event = self.take_add_position_action(-self.conf.discrete_action_distance, 0, 0)
         elif a == 3:
-            action = ActionBuilder.addPosition(0, self.args.discrete_action_distance, 0)
+            event = self.take_add_position_action(0, self.conf.discrete_action_distance, 0)
         elif a == 4:
-            action = ActionBuilder.addPosition(0, -self.args.discrete_action_distance, 0)
+            event = self.take_add_position_action(0, -self.conf.discrete_action_distance, 0)
         elif a == 5:
-            action = ActionBuilder.addPosition(0, 0, self.args.discrete_action_distance)
+            event = self.take_add_position_action(0, 0, self.conf.discrete_action_distance)
         elif a == 6:
-            action = ActionBuilder.addPosition(0, 0, -self.args.discrete_action_distance)
+            event = self.take_add_position_action(0, 0, -self.conf.discrete_action_distance)
         elif a == 7:
-            action = ActionBuilder.addRotation(0, self.args.discrete_action_rotation, 0)
+            event = self.take_add_rotation_action(0, self.conf.discrete_action_rotation, 0)
         elif a == 8:
-            action = ActionBuilder.addRotation(0, -self.args.discrete_action_rotation, 0)
+            event = self.take_add_rotation_action(0, -self.conf.discrete_action_rotation, 0)
 
-        event = self.step(action)
         self.s_frame = event.frame
-        if self.action_counter == self.args.max_episode_length:
+        if self.action_counter == self.conf.max_episode_length:
             print("episode finished because of max length")
             self.episode_finished = True
         r = self.reward();
@@ -113,7 +119,7 @@ class UnityGame:
         action = ActionBuilder.addPositionRotation(dx, dy, dz, 0, dr, 0)
         event = self.step(action)
         self.s_frame = event.frame
-        if self.action_counter == self.args.max_episode_length:
+        if self.action_counter == self.conf.max_episode_length:
             print("episode finished because of max length")
             self.episode_finished = True
         r = self.reward()
@@ -124,55 +130,53 @@ class UnityGame:
         if self.collision:
             print("episode ended because of collision with {}".format(self.collidedObjects))
             self.episode_finished = True
-            return self.args.collision_reward - self.action_counter * self.args.step_reward
+            return self.conf.collision_reward - self.action_counter * self.conf.step_reward
 
         if self.close_enough():
             print("episode ended because close enough")
             self.episode_finished = True
-            return self.args.close_enough_reward
+            return self.conf.close_enough_reward
 
-        return self.args.step_reward
+        return self.conf.step_reward
+
+    def reward_heuristic(self):
+        return 999
 
     def get_structure_info(self):
         # first figure out where the structure is and what its size is
         action = ActionBuilder.addPosition(0, 0, 0)
         event = self.step(action)
         structure = event.metadata['structure']
+        print(structure)
         position = structure['position']
-        size = structure['size']
+        extents = structure['extents']
+        self.structure_position = self.extract_position(position)
+        self.structure_extents = self.extract_position(extents)
 
-        # print(position)
-        # print(size)
+        print(self.structure_position)
+        print(self.structure_extents)
 
-        self.minx = position['x'] + 1
-        self.miny = position['y'] + 1
-        self.minz = position['z'] + 1
+        self.min_x = position['x'] - extents['x']
+        self.min_y = position['y'] - extents['y']
+        self.min_z = position['z'] - extents['z']
 
-        # self.maxx = self.minx + size['x']
-        # self.maxy = self.miny + size['y']
-        # self.maxz = self.minz + size['z']
+        # print("overriding strucuture info")
+        #size['x'] = 1
+        #size['y'] = 1
+        #size['z'] = 1
 
-        print("overriding strucuture info")
-        self.maxx = self.minx + 1
-        self.maxy = self.miny + 0.01
-        self.maxz = self.minz + 1
-
-    # todo
-    # need discrete version
-    # need to figure out min and max for coordinates
+        self.max_x = self.min_x + 2 * extents['x']
+        self.max_y = self.min_y + 2 * extents['y']
+        self.max_z = self.min_z + 2 * extents['z']
 
 
     def gen_new_episode(self):
-        self.minr = 0
-        self.maxr = 360
+        self.min_r = 0
+        self.max_r = 360
 
         while True:
-            self.s_x, self.s_y, self.s_z, self.s_r = self.random_pose()
-            self.t_x, self.t_y, self.t_z, self.t_r = self.random_pose_delta()
-            self.t_x += self.s_x
-            self.t_y += self.s_y
-            self.t_z += self.s_z
-            self.t_r += self.s_r
+            self.s_x, self.s_y, self.s_z, self.s_r = self.random_source_pose()
+            self.t_x, self.t_y, self.t_z, self.t_r = self.random_target_pose()
 
             # print("x: {} vs {}".format(self.s_x, self.t_x))
             # print("y: {} vs {}".format(self.s_y, self.t_y))
@@ -196,7 +200,7 @@ class UnityGame:
             agent = self.t.metadata['agent']
             self.t_position = agent['position']
             self.t_rotation = agent['rotation']
-            self.extract_target_position()
+            self.extract_target_pose()
             self.t_frame = self.t.frame
 
             # input("Hit enter to accept target")
@@ -221,37 +225,61 @@ class UnityGame:
             # input("Hit enter to accept source")
             break
 
-    def extract_target_position(self):
-        self.t_pos = (round(self.t_position['x'], 2),
-                      round(self.t_position['y'], 2),
-                      round(self.t_position['z'], 2))
-        self.t_rot = (round(self.t_rotation['x'], 2),
-                      round(self.t_rotation['y'], 2),
-                      round(self.t_rotation['z'], 2))
+    def extract_position(self, p):
+        return (self.grid_round(p['x'], self.conf.grid_distance),
+                self.grid_round(p['y'], self.conf.grid_distance),
+                self.grid_round(p['z'], self.conf.grid_distance))
 
-    def extract_source_position(self):
-        self.s_pos = (round(self.s_position['x'], 2),
-                      round(self.s_position['y'], 2),
-                      round(self.s_position['z'], 2))
-        self.s_rot = (round(self.s_rotation['x'], 2),
-                      round(self.s_rotation['y'], 2),
-                      round(self.s_rotation['z'], 2))
+    def extract_rotation(self, r):
+        return (self.grid_round(r['x'], self.conf.grid_rotation),
+                self.grid_round(r['y'], self.conf.grid_rotation),
+                self.grid_round(r['z'], self.conf.grid_rotation))
 
-    def random_pose(self):
-        x = round(random.uniform(self.minx, self.maxx), 2)
-        y = round(random.uniform(self.miny, self.maxy), 2)
-        z = round(random.uniform(self.minz, self.maxz), 2)
-        r = round(random.uniform(self.minr, self.maxr))
+    def extract_target_pose(self):
+        self.t_pos = self.extract_position(self.t_position)
+        self.t_rot = self.extract_rotation(self.t_rotation)
+
+    def extract_source_pose(self):
+        self.s_pos = self.extract_position(self.s_position)
+        self.s_rot = self.extract_rotation(self.s_rotation)
+
+    def random_source_pose(self):
+        x = self.uniform_coord(self.min_x, self.max_x, self.conf.grid_distance)
+        y = self.uniform_coord(self.min_y, self.max_y, self.conf.grid_distance)
+        z = self.uniform_coord(self.min_z, self.max_z, self.conf.grid_distance)
+        r = self.uniform_coord(self.min_r, self.max_r, self.conf.grid_rotation)
+
+        return (x, y, z, r)
+
+    def random_target_pose(self):
+        x = self.uniform_delta(self.conf.max_distance_delta, self.s_x, self.min_x, self.max_x, self.conf.grid_distance)
+        y = self.uniform_delta(self.conf.max_distance_delta, self.s_y, self.min_y, self.max_y, self.conf.grid_distance)
+        z = self.uniform_delta(self.conf.max_distance_delta, self.s_z, self.min_z, self.max_z, self.conf.grid_distance)
+        r = self.uniform_delta(self.conf.max_rotation_delta, self.s_r, self.min_r, self.max_r, self.conf.grid_rotation)
 
         return (x, y, z, r)
 
-    def random_pose_delta(self):
-        x = round(random.uniform(-self.args.max_distance_delta, self.args.max_distance_delta), 2)
-        y = round(random.uniform(-self.args.max_distance_delta, self.args.max_distance_delta), 2)
-        z = round(random.uniform(-self.args.max_distance_delta, self.args.max_distance_delta), 2)
-        r = round(random.uniform(-self.args.max_rotation_delta, self.args.max_rotation_delta), 2)
+    def grid_round(self, g, grid):
+        if grid is not None:
+            r = g % grid
+            g -= r
+            if r >= grid/2:
+                g += grid
 
-        return (x, y, z, r)
+        return g
+
+    def uniform_coord(self, min_g, max_g, grid):
+        g = np.random.uniform(min_g, max_g)
+        return self.grid_round(g, grid)
+
+    def uniform_delta(self, max_delta, g, min_g, max_g, grid):
+        if g + max_delta <= max_g:
+            max_g = g + max_delta
+        if g - max_delta >= min_g:
+            min_g = g - max_delta
+        g = np.random.uniform(min_g, max_g)
+
+        return self.grid_round(g, grid)
 
 class UnityState:
     def __init__(self, s_frame, t_frame, collision):

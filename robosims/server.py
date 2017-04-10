@@ -60,6 +60,7 @@ class Controller(object):
         self.response_queue = Queue()
         self.server = None
         self.config_file = config_file
+        self.pid = -1
 
     def reset(self):
         if self.server.state == 'waiting_for_request':
@@ -161,11 +162,11 @@ class Controller(object):
         # launch simulator
         if start_unity:
             proc = subprocess.Popen(self.unity_command(config), env=env)
-            pid = proc.pid
+            self.pid = proc.pid
 
-            print("launched pid %s" % pid)
+            print("launched pid %s" % self.pid)
             if platform.system() == 'Linux':
-                atexit.register(lambda: os.kill(pid, signal.SIGKILL))
+                atexit.register(lambda: os.kill(self.pid, signal.SIGKILL))
                 wc = self.setup_window_children(env['DISPLAY'])
                 self.server.xwindow_id = self.find_xwindow_id(pid, wc)
                 self.server.window_children = wc
@@ -189,6 +190,8 @@ class Controller(object):
         if self.server.state == 'waiting_for_response':
             self.response_queue.put(0)
         self.server.wsgi_server.shutdown()
+        if self.pid != -1:
+            os.kill(self.pid, signal.SIGKILL)
 
 class Server(object):
 

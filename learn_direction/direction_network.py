@@ -5,18 +5,18 @@ import math
 from robosims.unity import UnityGame
 
 class Direction_Model:
-    def __init__(self, args, cls, cheat=False, trainable=False):
+    def __init__(self, conf, cls, cheat=False, trainable=False):
         if cheat:
             cheat_direction = tf.placeholder(tf.float32, shape=[None, 3], name='cheat_direction')
         else:
             cheat_direction = None
-        self.network = Direction_Network(args, cls, "main", cheat_direction, trainable=trainable)
+        self.network = Direction_Network(conf, cls, "main", cheat_direction, trainable=trainable)
         self.pred_direction = self.network.get_output()
 
         # Mean squared error
         self.direction = tf.placeholder(tf.float32, name='direction', shape=[None, 3])
         self.loss = tf.nn.l2_loss(self.pred_direction - self.direction, name='loss')
-        self.mid_loss = 3 * 0.5 * args.max_distance_delta * args.max_distance_delta
+        self.mid_loss = 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
 
     def pred_tensor(self):
         return self.pred_direction
@@ -60,14 +60,14 @@ class Direction_Model:
         return "direction"
 
 class Direction_Network():
-    def __init__(self, args, cls, scope, cheat = None, trainable=False):
+    def __init__(self, conf, cls, scope, cheat = None, trainable=False):
         self.scope = scope
 
         with tf.variable_scope(scope):
             #Input and visual encoding layers
 
-            self.s_input = tf.placeholder(shape=[None,args.v_size,args.h_size,args.channels],dtype=tf.float32, name="s_input")
-            self.t_input = tf.placeholder(shape=[None,args.v_size,args.h_size,args.channels],dtype=tf.float32, name="t_input")
+            self.s_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="s_input")
+            self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
 
             with tf.variable_scope("source"):
                 self.source_net = cls({'data': self.s_input}, trainable=trainable)

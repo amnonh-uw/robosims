@@ -5,19 +5,19 @@ import math
 from robosims.unity import UnityGame
 
 class Distance_Model:
-    def __init__(self, args, cls, cheat=False, trainable=False):
+    def __init__(self, conf, cls, cheat=False, trainable=False):
         if cheat:
             cheat_distance = tf.placeholder(tf.float32, shape=[None, 1], name='cheat_distance')
         else:
             cheat_distance = None
-        self.network = Distance_Network(args, cls, "main", cheat_distance, trainable=trainable)
+        self.network = Distance_Network(conf, cls, "main", cheat_distance, trainable=trainable)
         self.pred_distance = self.network.get_output()
 
         # Mean squared error
         self.distance = tf.placeholder(tf.float32, name='distance', shape=[None, 1])
         self.loss = tf.nn.l2_loss(self.pred_distance - self.distance, name='loss')
 
-        max_distance = math.sqrt(3 * args.max_distance_delta * args.max_distance_delta)
+        max_distance = math.sqrt(3 * conf.max_distance_delta * conf.max_distance_delta)
         self.mid_loss = 0.5 * max_distance * max_distance
         print("max distance is {} chance loss is {}".format(max_distance, self.chance_loss()))
 
@@ -59,14 +59,14 @@ class Distance_Model:
         return "distance"
 
 class Distance_Network:
-    def __init__(self, args, cls, scope, cheat = None, trainable=False):
+    def __init__(self, conf, cls, scope, cheat = None, trainable=False):
         self.scope = scope
 
         with tf.variable_scope(scope):
             #Input and visual encoding layers
 
-            self.s_input = tf.placeholder(shape=[None,args.v_size,args.h_size,args.channels],dtype=tf.float32, name="s_input")
-            self.t_input = tf.placeholder(shape=[None,args.v_size,args.h_size,args.channels],dtype=tf.float32, name="t_input")
+            self.s_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="s_input")
+            self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
 
             with tf.variable_scope("source"):
                 self.source_net = cls({'data': self.s_input}, trainable=trainable)
@@ -82,11 +82,6 @@ class Distance_Network:
                 combined = tf.concat(values=[self.t_out, self.s_out, cheat], axis=1)
             else:
                 combined = tf.concat(values=[self.t_out, self.s_out], axis=1)
-
-            # self.s_pool_layers = self.flatten(self.source_net.pool_layers())
-            # self.t_pool_layers = self.flatten(self.target_net.pool_layers())
-
-            # combined = tf.concat(values=self.t_pool_layers +  self.s_pool_layers, axis=1)
 
             hidden = slim.fully_connected(combined, 1024, activation_fn=tf.nn.elu,
                 weights_initializer=normalized_columns_initializer(1.0),

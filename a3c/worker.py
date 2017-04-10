@@ -46,8 +46,6 @@ class Worker():
         advantages = rewards + gamma * self.value_plus[1:] - self.value_plus[:-1]
         advantages = discount(advantages,gamma)
 
-
-
         # Update the global network using gradients from loss
         # Generate network statistics to periodically save
         feed_dict = {self.local_AC.target_v:discounted_rewards,
@@ -170,6 +168,9 @@ class Worker():
                             feed_dict={self.local_AC.s_input:[s_input],
                                    self.local_AC.t_input:[t_input],
                                    self.local_AC.sensor_input:[sensor_input]})[0,0]
+
+                        # average bootstrap value with heuristic
+
                         v_l,p_l,e_l,g_n,v_n = self.train(episode_buffer,sess,args.gamma,v1)
                         episode_buffer = []
                         sess.run(self.update_local_ops)

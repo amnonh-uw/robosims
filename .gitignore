@@ -44,3 +44,7 @@ venv/
 logs/
 checkpoints/
 outputs/
+examples/
+projects/
+templates/
+unity/

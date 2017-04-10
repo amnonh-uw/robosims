@@ -1,32 +1,31 @@
 import tensorflow as tf
 import math
 import numpy as np
-import argparse
 import os
 import sys
 import queue
 import importlib
 import signal
 from robosims.unity import UnityGame
+from util.util import *
 from PIL import Image, ImageDraw, ImageFont
 
-def run_train(args, model_cls):
-    mod = importlib.import_module(args.base_class)
-    cls = getattr(mod, args.base_class)
-    cls_data = sys_path_find(args.base_class + ".npy")
+def train_regression(args, model_cls):
+    conf = args.conf
+    mod = importlib.import_module(conf.base_class)
+    cls = getattr(mod, conf.base_class)
+    cls_data = sys_path_find(conf.base_class + ".npy")
     if cls_data == None:
-        print("can't find data file for class {}".format(args.base_class))
+        print("can't find data file for class {}".format(conf.base_class))
         exit()
 
-    learning_rate = 1e-4
-
     cheat = False
-    model = model_cls(args, cls, cheat=cheat, trainable=True)
-    make_dirs(model.name(), args)
+    model = model_cls(conf, cls, cheat=cheat, trainable=True)
+    make_dirs(model.name(), conf)
 
     # optimizer_update = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
     # Create an optimizer.
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+    optimizer = tf.train.AdamOptimizer(learning_rate=conf.learning_rate)
 
     # Compute the gradients
     grads_and_vars = optimizer.compute_gradients(model.loss_tensor())
@@ -38,16 +37,16 @@ def run_train(args, model_cls):
 
     with tf.Session() as sess:
         # Instantiate a SummaryWriter to output summaries and the Graph.
-        summary_writer = tf.summary.FileWriter(args.log_path, sess.graph)
+        summary_writer = tf.summary.FileWriter(conf.log_path, sess.graph)
         summary_writer.flush()
 
         if args.load_model:
             print('Loading Model...')
-            ckpt = tf.train.get_checkpoint_state(args.model_path)
+            ckpt = tf.train.get_checkpoint_state(conf.model_path)
             saver.restore(sess,ckpt.model_checkpoint_path)
         else:
             sess.run(tf.global_variables_initializer())
-            if args.load_base_weights:
+            if conf.load_base_weights:
                 print("loading network weights")
                 model.network.load(cls_data, sess, ignore_missing=True)
                 print("network load complete")
@@ -59,7 +58,21 @@ def run_train(args, model_cls):
             num_losses = 0
             mean_loss = 999999.
     
-            for i in range(0, 40000):
+            if args.test_only:
+                if args.iter == 0:
+                    args.test_iter = 100
+                else:
+                    args.test_iter = args.iter
+                train_iter = 0
+            else:
+                if args.iter == 0:
+                    train_iter = 40000
+                else:
+                    train_iter = args.iter
+                args.test_iter = 100
+        
+            print("doing {} training iterations".format(train_iter))
+            for i in range(0, train_iter):
                 env.new_episode()
                 episode_count += 1
                 t = env.get_state().target_buffer()
@@ -111,9 +124,9 @@ def run_train(args, model_cls):
                 if episode_count % 5 == 0 and episode_count != 0:
                     if episode_count % 25 == 0:
                         time_per_step = 0.05
-                        make_jpg(args.frames_path, "image_",  env, model, pred_value_out, episode_count, loss=loss)
+                        make_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
                     if episode_count % 250 == 0:
-                        saver.save(sess,args.model_path+'/model-'+str(episode_count)+'.cptk')
+                        saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                         print("Saved Model")
 
                 if episode_count % 200 == 0:
@@ -126,7 +139,7 @@ def run_train(args, model_cls):
                     else:
                         mean_loss = m
 
-            test(sess, env, model, args.frames_path)
+            test(conf, sess, env, model, args.test_iter)
 
         except KeyboardInterrupt:
             print("W: interrupt received, stopping…")
@@ -135,9 +148,9 @@ def run_train(args, model_cls):
             env.close()
 
 
-def test(sess, env, model, frames_path):
-    print("testing...")
-    for episode_count in range(1, 100):
+def test(conf, sess, env, model, test_iter):
+    print("testing... {} iterations".format(test_iter))
+    for episode_count in range(0, test_iter):
         env.new_episode()
         t = env.get_state().target_buffer()
         s = env.get_state().source_buffer()
@@ -149,35 +162,12 @@ def test(sess, env, model, frames_path):
         pred_value_out = sess.run([model.pred_tensor()], feed_dict=feed_dict)
         pred_value_out = pred_value_out[0]
 
-        make_jpg(frames_path, "test_set_", env, model, pred_value_out, episode_count)
+        make_jpg(conf, "test_set_", env, model, pred_value_out, episode_count)
 
 def process_frame(frame):
     need_shape = [1]
     need_shape += frame.shape
     return np.reshape(frame.astype(float)/ 255.0, need_shape)
-
-
-def make_jpg(frames_path, prefix, env, model, pred_value, episode_count, loss=None):
-    t = env.get_state().target_buffer()
-    s = env.get_state().target_buffer()
-    both = np.vstack((s, t))
-    im_both = Image.fromarray(both, 'RGB')
-
-    # get a font
-    fnt = ImageFont.load_default()
-    # get a drawing context
-    d = ImageDraw.Draw(im_both)
-
-    a = model.error_str(env, pred_value)
-
-    if loss is None:
-        draw_text = a
-    else:
-        draw_text = "loss="+ str(loss) + " " + a
-
-    # draw text
-    d.text((10,10), draw_text, font=fnt)
-    im_both.save(frames_path + "/" +  prefix + str(episode_count)+'.jpg')
 
 def ascii_hist(x, bins):
     N,X = np.histogram(x, bins=bins)
@@ -210,52 +200,3 @@ def zero_grad(grad):
     if np.count_nonzero(grad) != 0:
             return False
     return True
-
-def parse_args(argv):
-    print(argv)
-    parser = argparse.ArgumentParser(description='a3c train')
-    parser.add_argument('--h_size', type=int, help='horizontal image size', default=400)
-    parser.add_argument('--v_size', type=int, help='vertical image size', default=300)
-    parser.add_argument('--channels', type=int, help='image channels', default=3)
-    parser.add_argument('--sensors', type=int, help='sensor channels', default=1)
-    parser.add_argument('--gamma', type=float, help='discount rate', default=0.99)
-    parser.add_argument('--config', type=str, help='config file', default="")
-    parser.add_argument('--load-model', dest='load_model', action='store_true')
-    parser.add_argument('--no-load_model', dest='load_model', action='store_false')
-    parser.add_argument('--discrete_action_distance', type=float, default=0.01)
-    parser.add_argument('--discrete_action_rotation', type=float, default=1)
-    parser.add_argument('--close-enough-distance', type=float, default = 0.01)
-    parser.add_argument('--close-enough-rotation', type=float, default = 1)
-    parser.add_argument('--max-distance-delta', type=float, default = 1)
-    parser.add_argument('--max-rotation-delta', type=float, default = 3)
-    parser.add_argument('--collision-reward', type=int, default = -1000)
-    parser.add_argument('--step-reward', type=int, default = -1)
-    parser.add_argument('--close-enough-reward', type=int, default = 1000)
-    parser.add_argument('--discrete-actions', dest='discrete_actions', action='store_true')
-    parser.add_argument('--continous_actions', dest='discrete_actions', action='store_false')
-    parser.add_argument('--base-class', type=str, default='GoogleNet')
-    parser.add_argument('--load-base-weights', dest='load_base_weights', action='store_true')
-    parser.set_defaults(load_model=False)
-    parser.set_defaults(load_base_weights=False)
-    parser.set_defaults(discrete_actions=False)
-
-    args = parser.parse_args(argv)
-    print(args)
-    return args
-
-
-def make_dirs(postfix, args):
-   # Create a directory to save the model to
-    args.model_path = './model_' + postfix
-    if not os.path.exists(args.model_path):
-        os.makedirs(args.model_path)
-
-    # Create a directory to save episode playback gifs to
-    args.frames_path = './frames_' + postfix
-    if not os.path.exists(args.frames_path):
-        os.makedirs(args.frames_path)
-
-    # Create a directory for logging
-    args.log_path = './log_' + postfix
-    if not os.path.exists(args.log_path):
-        os.makedirs(args.log_path)
