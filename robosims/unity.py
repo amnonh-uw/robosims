@@ -148,26 +148,32 @@ class UnityGame:
         event = self.step(action)
         structure = event.metadata['structure']
         print(structure)
-        position = structure['position']
-        extents = structure['extents']
-        self.structure_position = self.extract_position(position)
-        self.structure_extents = self.extract_position(extents)
+        # position = structure['position']
+        # extents = structure['extents']
+        # self.structure_position = self.extract_position(position)
+        # self.structure_extents = self.extract_position(extents)
 
-        print(self.structure_position)
-        print(self.structure_extents)
+        # print(self.structure_position)
+        # print(self.structure_extents)
 
-        self.min_x = position['x'] - extents['x']
-        self.min_y = position['y'] - extents['y']
-        self.min_z = position['z'] - extents['z']
+        # self.min_x = position['x'] - extents['x']
+        # self.min_y = position['y'] - extents['y']
+        # self.min_z = position['z'] - extents['z']
 
-        # print("overriding strucuture info")
-        #size['x'] = 1
-        #size['y'] = 1
-        #size['z'] = 1
 
-        self.max_x = self.min_x + 2 * extents['x']
-        self.max_y = self.min_y + 2 * extents['y']
-        self.max_z = self.min_z + 2 * extents['z']
+        # self.max_x = self.min_x + 2 * extents['x']
+        # self.max_y = self.min_y + 2 * extents['y']
+        # self.max_z = self.min_z + 2 * extents['z']
+
+        print("overriding strucuture info")
+        # min 8.0,0.8,10.6
+        self.min_x = 8.0
+        self.min_y = 0.8
+        self.min_z = 10.6
+        # max 14.0,3.9,13.4
+        self.max_x = 14
+        self.max_y = 3.9
+        self.max_z = 13.4
 
 
     def gen_new_episode(self):
@@ -260,11 +266,18 @@ class UnityGame:
         return (x, y, z, r)
 
     def grid_round(self, g, grid):
-        if grid is not None:
-            r = g % grid
-            g -= r
-            if r >= grid/2:
-                g += grid
+        if grid is None:
+            return g
+
+        l = -math.log10(grid)
+        li = int(l)
+        if li == l:
+            return round(g, li)
+            
+        r = g % grid
+        g -= r
+        if r >= grid/2:
+             g += grid
 
         return g
 
