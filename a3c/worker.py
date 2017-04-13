@@ -1,27 +1,27 @@
 import numpy as np
 import tensorflow as tf
 import scipy.signal
-import a3c.helper
 import random
 import math
+from util.util import *
 
 # ### Worker Agent
 
 class Worker():
-    def __init__(self,name, game, args, ac_network, trainer,model_path,global_episodes):
+    def __init__(self,name, game, args, ac_network, trainer,global_episodes):
         self.name = "worker_" + str(name)
         self.number = name        
-        self.model_path = model_path
+        self.model_path =args.conf.model_path
         self.trainer = trainer
         self.global_episodes = global_episodes
         self.increment = self.global_episodes.assign_add(1)
         self.episode_rewards = []
         self.episode_lengths = []
         self.episode_mean_values = []
-        self.summary_writer = tf.summary.FileWriter("train_"+str(self.number))
+        self.summary_writer = tf.summary.FileWriter("a3c_train_worker"+str(self.number))
 
-        #Create the local copy of the network and the tensorflow op to copy global paramters to local network
-        self.local_AC = ac_network(args,self.name,trainer)
+        # Create the local copy of the network and the tensorflow op to copy global paramters to local network
+        self.local_AC = ac_network(args.conf,self.name,trainer)
         self.update_local_ops = update_target_graph('global',self.name)
         self.update_feedforward_local_ops = update_target_graph('global', self.name, tf.GraphKeys.MODEL_VARIABLES)
 
@@ -77,7 +77,7 @@ class Worker():
         print("losses: policy {} value {} entropy {}".format(p_l, v_l, e_l))
         return v_l / len(rollout),p_l / len(rollout),e_l / len(rollout), g_n,v_n
         
-    def work(self,args,sess,coord,saver):
+    def work(self,conf,sess,coord,saver):
         episode_count = sess.run(self.global_episodes)
         total_steps = 0
         print("Starting worker " + str(self.number))
@@ -106,8 +106,8 @@ class Worker():
                 s_input = process_frame(s)
                 
                 while self.env.is_episode_finished() == False:
-                    if args.discrete_actions:
-                        #Take an action using probabilities from policy network output.
+                    if conf.discrete_actions:
+                        # Take an action using probabilities from policy network output.
                         a_dist,v = sess.run([self.local_AC.policy,self.local_AC.value],
                             feed_dict={self.local_AC.s_input:[s_input],
                                         self.local_AC.t_input:[t_input],
@@ -118,7 +118,7 @@ class Worker():
 
                         r = self.env.take_discrete_action(a) / 100.0
                     else:
-                        #Take an action using random gaussian from the policy network output
+                        # Take an action using random gaussian from the policy network output
                         means, variances, v = sess.run([self.local_AC.policy_means,self.local_AC.policy_variances, self.local_AC.value],
                             feed_dict={self.local_AC.s_input:[s_input],
                                         self.local_AC.t_input:[t_input],
@@ -161,7 +161,7 @@ class Worker():
                     
                     # If the episode hasn't ended, but the experience buffer is full, then we
                     # make an update step using that experience rollout.
-                    if len(episode_buffer) == args.episode_buffer_size and d != True and episode_step_count != args.max_episode_length - 1:
+                    if len(episode_buffer) == conf.episode_buffer_size and d != True and episode_step_count != conf.max_episode_length - 1:
                         # Since we don't know what the true final return is, we "bootstrap" from our current
                         # value estimation.
                         v1 = sess.run(self.local_AC.value, 
@@ -170,8 +170,10 @@ class Worker():
                                    self.local_AC.sensor_input:[sensor_input]})[0,0]
 
                         # average bootstrap value with heuristic
+                        h = self.env.reward_heuristic()
+                        v1 = h * conf.reward_heuristic_weight + v1 * (1-conf.reward_heuristic_weight)
 
-                        v_l,p_l,e_l,g_n,v_n = self.train(episode_buffer,sess,args.gamma,v1)
+                        v_l,p_l,e_l,g_n,v_n = self.train(episode_buffer,sess,conf.gamma,v1)
                         episode_buffer = []
                         sess.run(self.update_local_ops)
                     if d == True:
@@ -183,16 +185,16 @@ class Worker():
                 
                 # Update the network using the experience buffer at the end of the episode.
                 if len(episode_buffer) != 0:
-                    v_l,p_l,e_l,g_n,v_n = self.train(episode_buffer,sess,args.gamma,0.0)
+                    v_l,p_l,e_l,g_n,v_n = self.train(episode_buffer,sess,conf.gamma,0.0)
                                 
                     
                 # Periodically save gifs of episodes, model parameters, and summary statistics.
+
                 if episode_count % 5 == 0 and episode_count != 0:
                     if self.name == 'worker_0' and episode_count % 25 == 0:
-                        time_per_step = 0.05
-                        images = np.array(episode_source_frames)
-                        a3c.helper.make_gif(images,'./frames/image'+str(episode_count)+'.gif',
-                            duration=len(images)*time_per_step)
+                        images = episode_source_frames
+                        make_gif(conf, episode_target_frame, episode_source_frames, episode_count)
+
                     if episode_count % 250 == 0 and self.name == 'worker_0':
                         saver.save(sess,self.model_path+'/model-'+str(episode_count)+'.cptk')
                         print("Saved Model")

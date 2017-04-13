@@ -14,7 +14,6 @@ class UnityGame:
         random.seed()
 
     def close (self):
-        print("stopping controller")
         self.controller.stop()
 
     def reset(self):
@@ -78,8 +77,12 @@ class UnityGame:
         action = ActionBuilder.addPosition(x, y, z)
         return self.step(action)
 
-    def take_add_roation_action(self, rx, ry, rz):
+    def take_add_rotation_action(self, rx, ry, rz):
         action = ActionBuilder.addRotation(rx, ry, rz)
+        return self.step(action)
+
+    def take_set_position_action(self, x, y, z):
+        action = ActionBuilder.setPosition(x, y, z)
         return self.step(action)
 
     def take_discrete_action(self, a):
@@ -108,8 +111,8 @@ class UnityGame:
         if self.action_counter == self.conf.max_episode_length:
             print("episode finished because of max length")
             self.episode_finished = True
-        r = self.reward();
-        print("{0}:action {1} reward {2}\ns {3},{4}\nt {5},{6} ".format(self.action_counter, a, r, self.s_pos, self.s_rot, self.t_pos, self.t_rot))
+        r = self.reward()
+        print("{0}:action {1} reward {2}".format(self.action_counter, a, r))
         return r
 
     def take_continous_action(self, dx, dy, dz, dr):
@@ -140,14 +143,27 @@ class UnityGame:
         return self.conf.step_reward
 
     def reward_heuristic(self):
-        return 999
+        steps = 0
+        if self.conf.discrete_actions:
+            delta = np.asarray(self.t_pos) - np.asarray(self.s_pos)
+            for d in delta:
+                steps += abs(int(d / self.conf.discrete_action_distance))
+
+            delta = np.asarray(self.t_rot) - np.asarray(self.s_rot)
+            for d in delta:
+                steps += abs(int(d / self.conf.discrete_action_rotation))
+
+            print("heuristic steps {}".format(steps))
+            return self.conf.close_enough_reward + steps * self.conf.step_reward
+        else:
+            return self.conf.close_enough_reward - 4
 
     def get_structure_info(self):
         # first figure out where the structure is and what its size is
         action = ActionBuilder.addPosition(0, 0, 0)
         event = self.step(action)
         structure = event.metadata['structure']
-        print(structure)
+        # print(structure)
         # position = structure['position']
         # extents = structure['extents']
         # self.structure_position = self.extract_position(position)

@@ -12,7 +12,7 @@ import platform
 import json
 import tempfile
 import re
-from a3c.train import train as network_train
+from a3c.train import train as a3c_train
 from learn_distance.train import train as distance_network_train
 from learn_direction.train import train as direction_network_train
 from util.bfs import run_bfs
@@ -178,29 +178,25 @@ def bfs(context, port=0, start_unity=True):
     run_bfs(['--server-config=configs/cfg_bedroom04_drone.yaml'])
 
 @task
-def train(context, port=0, start_unity=True):
-    network_train(['--num_workers=1', '--server-config=configs/cfg_bedroom04_drone.yaml', '--initialize-weights=posenet.npy'])
-
-@task
-def discrete_train(context, port=0, start_unity=True):
-    network_train(['--num_workers=1', '--server-config=configs/cfg_bedroom04_drone.yaml', '--discrete-actions', '--initialize-weights=posenet.npy'])
-
-@task
-def train_distance(context, base_class="GoogleNet", port=0, start_unity=True):
+def train_a3c(context, port=0, start_unity=True):
     sys.path.append("./networks")
-    print("training {}".format(base_class))
+    a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
+
+@task
+
+@task
+def train_distance(context, port=0, start_unity=True):
+    sys.path.append("./networks")
     distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
 
 @task
-def train_direction(context, base_class="GoogleNet", port=0, start_unity=True):
+def train_direction(context, port=0, start_unity=True):
     sys.path.append("./networks")
-    print("training {}".format(base_class))
     direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
 
 @task
-def test_direction(context, base_class="GoogleNet", port=0, start_unity=True):
+def test_direction(context, port=0, start_unity=True):
     sys.path.append("./networks")
-    print("testing  {}".format(base_class))
     direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml',
     '--load-model',
     '--test-only'])

@@ -22,6 +22,11 @@ def parse_args(argv):
 
 class config(EasyDict):
     def __init__(self):
+        # a3c
+        self.num_workers = 1
+        self.max_episode_length = 300
+        self.episode_buffer_size = 30
+
         # image resolution
         self.h_size = 400
         self.v_size = 300
@@ -31,7 +36,7 @@ class config(EasyDict):
         self.gamma = 0.99
 
         # dicrete grid
-        self.discrete_action_distance = 0.01
+        self.discrete_action_distance = 0.1
         self.discrete_action_rotation = 1
 
         # criteria for goal success
@@ -54,10 +59,15 @@ class config(EasyDict):
         # grid
         self.grid_distance = 0.01
         self.grid_rotation = 0.1
-        self.bfs_grid_x = 0.1
-        self.bfs_grid_y = 0.1
-        self.bfs_grid_z = 0.1
+        self.bfs_grid_x = 0.5
+        self.bfs_grid_y = 0.5
+        self.bfs_grid_z = 0.5
 
+        # heuristic
+        self.reward_heuristic_weight = 0.80
+
+        # gif
+        self.gif_time_per_step = 0.05
         self.base_class = 'GoogleNet'
         self.load_base_weights = True
 

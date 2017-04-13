@@ -179,14 +179,6 @@ def ascii_hist(x, bins):
         xi = '{0: <8.4g}'.format(xi).ljust(10)
         print('{0}| {1}'.format(xi,bar))
 
-def sys_path_find(pathname, matchFunc=os.path.isfile):
-    for dirname in sys.path:
-        candidate = os.path.join(dirname, pathname)
-        if matchFunc(candidate):
-            return candidate
-    
-    return None
-
 def check_grad(sess, grads_and_vars, feed_dict):
     for gv in grads_and_vars:
         grad = sess.run(gv[1], feed_dict=feed_dict)
