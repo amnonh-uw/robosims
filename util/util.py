@@ -27,16 +27,47 @@ def make_dirs(postfix, conf):
 
 def make_gif(conf, episode_target_frame, episode_source_frames, episode_count):
     gif_file = conf.frames_path + '/movie_'+str(episode_count)+'.gif'
-    images = list(episode_source_frames)
-    images.insert(0, episode_target_frame)
-    duration = len(episode_source_frames) * conf.gif_time_per_step
-    kargs = { 'duration': duration }
-    imageio.mimsave(gif_file, images, 'GIF', **kargs)
+    writer = imageio.get_writer(gif_file, mode='I', fps=conf.gif_fps)
+
+    im_t = Image.fromarray(episode_target_frame)
+
+    writer.append_data(episode_target_frame)
+    for frame in episode_source_frames:
+        im_s = Image.fromarray(frame)
+        im = make_image(im_s, im_t, "source", "dest")
+        writer.append_data(PIL2array(im))
+
+    writer.close()
+
+def make_image(source, dest, source_caption_text, dest_caption_text = ""):
+    seperator_width = 4
+    text_height_margin = 2
+    source_width_margin = 10
+
+    font = ImageFont.load_default()
+    source_draw = ImageDraw.Draw(source)
+    _, text_height = source_draw.textsize(source_caption_text, font=font)
+    text_height += 2 * text_height_margin
+    dest_width_margin = source.size[0] + seperator_width + source_width_margin
+    width = source.size[0] + dest.size[0] + seperator_width
+
+    caption = Image.new('RGB', (width, text_height))
+    caption_draw = ImageDraw.Draw(caption)
+    caption_draw.text((source_width_margin,text_height_margin), source_caption_text, font=font)
+    caption_draw.text((dest_width_margin,text_height_margin), dest_caption_text, font=font)
+
+    height = source.size[1] + text_height
+    seperator = Image.new('RGB', (seperator_width, height))
+
+    bottom = hstack_images((source, seperator, dest))
+    stacked = vstack_images((caption, bottom))
+
+    return stacked
 
 def make_jpg(conf, prefix, env, model, pred_value, episode_count, loss=None):
     t = env.get_state().target_buffer()
     im_t = Image.fromarray(t)
-    s = env.get_state().target_buffer()
+    s = env.get_state().source_buffer()
     im_s = Image.fromarray(s)
     err_str = model.error_str(env, pred_value)
 
@@ -45,19 +76,7 @@ def make_jpg(conf, prefix, env, model, pred_value, episode_count, loss=None):
     else:
         draw_text = "loss="+ str(loss) + " " + err_str
 
-    fnt = ImageFont.load_default()
-    im_t_draw = ImageDraw.Draw(im_t)
-    _, h = im_t_draw.textsize(draw_text, font=fnt)
-    w = s.shape[0]
-    h += 4
-
-    caption = Image.new('RGB', (w, h))
-    caption_draw = ImageDraw.Draw(caption)
-    caption_draw.text((10,2), draw_text, font=fnt)
-
-    seperator = Image.new('RGB', (w, 4))
-
-    stacked = vstack_images((caption, im_s, seperator, im_t))
+    stacked = make_image(im_s, im_t, "source " + draw_text, "dest")
     stacked.save(conf.frames_path + "/" +  prefix + str(episode_count)+'.jpg')
 
 def vstack_images(images):
@@ -72,6 +91,21 @@ def vstack_images(images):
     for im in images:
         new_im.paste(im, (0, h_offset))
         h_offset += im.size[1]
+
+    return new_im
+
+def hstack_images(images):
+    total_width = 0
+    total_height = images[0].size[1]
+    for im in images:
+        total_width += im.size[0]
+
+    new_im = Image.new('RGB', (total_width, total_height))
+
+    w_offset = 0
+    for im in images:
+        new_im.paste(im, (w_offset, 0))
+        w_offset += im.size[0]
 
     return new_im
 
@@ -114,3 +148,6 @@ def sys_path_find(pathname, matchFunc=os.path.isfile):
             return candidate
 
     return None
+
+def PIL2array(img):
+    return np.array(img.getdata(), np.uint8).reshape(img.size[1], img.size[0], 3)

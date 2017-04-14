@@ -48,12 +48,12 @@ class Distance_Model:
         true_distance = env.distance()
         delta = true_distance - pred_distance
 
-        if true_distance < 0.01:
-            s = str(round(delta,2)) + "/" + str(round(true_distance, 2))
-        else:
-            s = str(round(delta/true_distance, 2) *100) + "%"
+        err_pct_string = str(round(delta/true_distance, 2) *100) + "%"
+        true_distance = round(true_distance, 2)
+        delta = round(delta, 2)
+        err_frac_string = str(delta) + "/" + str(true_distance)
 
-        return "error " + s
+        return "error " + err_frac_string + " " + err_pct_string
 
     def name(self):
         return "distance"

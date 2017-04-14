@@ -67,7 +67,7 @@ class config(EasyDict):
         self.reward_heuristic_weight = 0.80
 
         # gif
-        self.gif_time_per_step = 0.05
+        self.gif_fps = 20
         self.base_class = 'GoogleNet'
         self.load_base_weights = True
 

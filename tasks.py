@@ -147,7 +147,6 @@ def startx(context, display=15):
         raise Exception("Can only run startx on linux")
     records = list(filter(lambda r: r.get('Vendor', '') == 'NVIDIA Corporation' and r['Class'] == 'VGA compatible controller', pci_records()))
 
-    print(records)
     if not records:
         raise Exception("no nvidia cards found")
 
@@ -188,6 +187,13 @@ def train_a3c(context, port=0, start_unity=True):
 def train_distance(context, port=0, start_unity=True):
     sys.path.append("./networks")
     distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
+
+@task
+def test_distance(context, port=0, start_unity=True):
+    sys.path.append("./networks")
+    distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml',
+    '--load-model',
+    '--test-only'])
 
 @task
 def train_direction(context, port=0, start_unity=True):
