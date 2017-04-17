@@ -1,3 +1,12 @@
+from enum import IntEnum
+
+class DiscreteAction(IntEnum):
+    DoNothing = 0
+    MoveRight = 1
+    Moveleft = 2
+    MoveUp = 3
+    MoevDown = 4
+        
 class ActionBuilder(object):
     @staticmethod
     def reset():

@@ -6,7 +6,7 @@ import threading
 import tensorflow as tf
 import importlib
 from a3c.worker import Worker
-from a3c.ac_network.ac_network import AC_Network
+from a3c.ac_network import AC_Network
 from robosims.unity import UnityGame
 from util.config import *
 from util.util import *

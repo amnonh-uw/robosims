@@ -3,6 +3,7 @@ import tensorflow.contrib.slim as slim
 import numpy as np
 import math
 from robosims.unity import UnityGame
+from util.util import *
 
 class Direction_Model:
     def __init__(self, conf, cls, cheat=False, trainable=False):
@@ -75,8 +76,8 @@ class Direction_Network():
             with tf.variable_scope("target"):
                 self.target_net = cls({'data': self.t_input}, trainable=trainable)
 
-            self.s_out = self.flatten(self.source_net.get_output())
-            self.t_out = self.flatten(self.target_net.get_output())
+            self.s_out = flatten(self.source_net.get_output())
+            self.t_out = flatten(self.target_net.get_output())
               
             if cheat is not None:
                 print("Direction network cheating....")
@@ -92,7 +93,7 @@ class Direction_Network():
 
             hidden = slim.fully_connected(combined, 1024, activation_fn=tf.nn.elu,
                 weights_initializer=normalized_columns_initializer(1.0),
-                biases_initializer=None, scope='hidden')
+                biases_initializer=None, scope='hidden_vector')
 
             self.direction_pred = slim.fully_connected(hidden,3,
                 activation_fn=None,
@@ -109,46 +110,3 @@ class Direction_Network():
                 self.source_net.load(data_path, session, ignore_missing)
             with tf.variable_scope("target"):
                 self.target_net.load(data_path, session, ignore_missing)
-
-    def flatten(self, t, max_size=0):
-        if isinstance(t, list):
-            l = []
-            for t_item in t:
-                l.append(self.flatten(t_item, max_size))
-
-            return l
-            
-        input_shape = t.get_shape()
-        if input_shape.ndims == 4:
-            dim = 1
-            for d in input_shape[1:].as_list():
-                dim *= d
-            print("flattening " + t.name + " size " + str(dim))
-            t = tf.reshape(t, [-1, dim])
-        elif input_shape.ndims == 1:
-            dim = input_shape[1]
-        else:
-            raise ValueError("invalid number of dimentions " + str(input_shape.ndims))
-
-        if max_size != 0 and dim > max_size:
-            print("size too large, inserting a hidden layer")
-            # insert a fully connected layer
-            hidden = slim.fully_connected(t, max_size,
-                activation_fn=None,
-                weights_initializer=normalized_columns_initializer(1.0),
-                biases_initializer=None)
-
-            return hidden
-        else:
-            return t
-
-# Used to initialize weights for policy and value output layers
-def normalized_columns_initializer(std=1.0):
-    def _initializer(shape, dtype=None, partition_info=None):
-        print("Initializer called for shape {}".format(shape))
-        out = np.random.randn(*shape).astype(np.float32)
-        out *= std / np.sqrt(np.square(out).sum(axis=0, keepdims=True))
-        print("mean of output {}".format(np.mean(out)))
-        print("max of output {}".format(np.max(out)))
-        return tf.constant(out, dtype=tf.float32, shape=shape)
-    return _initializer

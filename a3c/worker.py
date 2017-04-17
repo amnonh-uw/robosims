@@ -192,7 +192,6 @@ class Worker():
 
                 if episode_count % 5 == 0 and episode_count != 0:
                     if self.name == 'worker_0' and episode_count % 25 == 0:
-                        images = episode_source_frames
                         make_gif(conf, episode_target_frame, episode_source_frames, episode_count)
 
                     if episode_count % 250 == 0 and self.name == 'worker_0':

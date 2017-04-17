@@ -26,29 +26,30 @@ class AC_Network():
             self.s_out = flatten(self.source_net.get_output())
             self.t_out = flatten(self.target_net.get_output())
 
-            combined = tf.concat(values=[self.t_out, self.s_out,
-                                               self.sensor_input], axis=1)
+            combined = tf.concat(values=[self.t_out, self.s_out], axis=1)
 
-            hidden = slim.fully_connected(combined, 256, activation_fn=tf.nn.elu)
+            hidden = slim.fully_connected(combined, 1024, activation_fn=tf.nn.elu, scope='hidden_vector')
+
+            combined = tf.concat(values=[hidden, self.sensor_input], axis=1)
 
             # Output layer for policy
             if conf.discrete_actions:
-                self.policy = slim.fully_connected(hidden,conf.a_size,
+                self.policy = slim.fully_connected(combined,conf.a_size,
                     activation_fn=tf.nn.softmax,
                     weights_initializer=normalized_columns_initializer(0.01),
                     biases_initializer=None, scope='policy')
             else:
-                self.policy_means = slim.fully_connected(hidden,conf.a_size,
+                self.policy_means = slim.fully_connected(combined,conf.a_size,
                     activation_fn=None,
                     weights_initializer=normalized_columns_initializer(0.01),
                     biases_initializer=None, scope='policy_means')
-                self.policy_variances = slim.fully_connected(hidden,conf.a_size,
+                self.policy_variances = slim.fully_connected(combined,conf.a_size,
                     activation_fn=tf.nn.softplus,
                     weights_initializer=normalized_columns_initializer(0.01),
                     biases_initializer=None, scope='policy_variances')
 
             # Output layer for value estimation
-            self.value = slim.fully_connected(hidden,1,
+            self.value = slim.fully_connected(combined,1,
                 activation_fn=None,
                 weights_initializer=normalized_columns_initializer(1.0),
                 biases_initializer=None, scope='value')
@@ -90,11 +91,3 @@ class AC_Network():
                 self.source_net.load(data_path, session, ignore_missing=True)
             with tf.variable_scope("target"):
                 self.target_net.load(data_path, session, ignore_missing=True)
-
-# Used to initialize weights for policy and value output layers
-def normalized_columns_initializer(std=1.0):
-    def _initializer(shape, dtype=None, partition_info=None):
-        out = np.random.randn(*shape).astype(np.float32)
-        out *= std / np.sqrt(np.square(out).sum(axis=0, keepdims=True))
-        return tf.constant(out)
-    return _initializer

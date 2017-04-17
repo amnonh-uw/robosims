@@ -158,6 +158,23 @@ class UnityGame:
         else:
             return self.conf.close_enough_reward - 4
 
+    def next_step_heuristic(self):
+        steps = 0
+        if self.conf.discrete_actions:
+            delta = np.asarray(self.t_pos) - np.asarray(self.s_pos)
+            for d in delta:
+                steps += abs(int(d / self.conf.discrete_action_distance))
+
+            delta = np.asarray(self.t_rot) - np.asarray(self.s_rot)
+            for d in delta:
+                steps += abs(int(d / self.conf.discrete_action_rotation))
+
+            h =  self.conf.close_enough_reward + steps * self.conf.step_reward
+            print("next_step_heuristic {}".format(h))
+            return h
+        else:
+            return self.conf.close_enough_reward - 4
+
     def get_structure_info(self):
         # first figure out where the structure is and what its size is
         action = ActionBuilder.addPosition(0, 0, 0)

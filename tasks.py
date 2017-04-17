@@ -182,8 +182,6 @@ def train_a3c(context, port=0, start_unity=True):
     a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
 
 @task
-
-@task
 def train_distance(context, port=0, start_unity=True):
     sys.path.append("./networks")
     distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])

@@ -12,18 +12,23 @@ from PIL import Image, ImageDraw, ImageFont
 def make_dirs(postfix, conf):
    # Create a directory to save the model to
     conf.model_path = './model_' + postfix
-    if not os.path.exists(conf.model_path):
-        os.makedirs(conf.model_path)
+    make_dir(conf.model_path, conf)
 
     # Create a directory to save episode playback gifs to
     conf.frames_path = './frames_' + postfix
-    if not os.path.exists(conf.frames_path):
-        os.makedirs(conf.frames_path)
+    make_dir(conf.frames_path, conf)
 
     # Create a directory for logging
     conf.log_path = './log_' + postfix
-    if not os.path.exists(conf.log_path):
-        os.makedirs(conf.log_path)
+    make_dir(conf.log_path, conf)
+
+def make_dir(file_path, conf):
+    if not os.path.exists(file_path):
+        os.makedirs(file_path)
+    conf_path = file_path + '/conf.txt'
+    with open(conf_path, 'w') as f:
+        f.write(str(conf))
+        f.write('\n')
 
 def make_gif(conf, episode_target_frame, episode_source_frames, episode_count):
     gif_file = conf.frames_path + '/movie_'+str(episode_count)+'.gif'
@@ -31,7 +36,6 @@ def make_gif(conf, episode_target_frame, episode_source_frames, episode_count):
 
     im_t = Image.fromarray(episode_target_frame)
 
-    writer.append_data(episode_target_frame)
     for frame in episode_source_frames:
         im_s = Image.fromarray(frame)
         im = make_image(im_s, im_t, "source", "dest")
@@ -151,3 +155,11 @@ def sys_path_find(pathname, matchFunc=os.path.isfile):
 
 def PIL2array(img):
     return np.array(img.getdata(), np.uint8).reshape(img.size[1], img.size[0], 3)
+
+# Used to initialize weights for policy and value output layers
+def normalized_columns_initializer(std=1.0):
+    def _initializer(shape, dtype=None, partition_info=None):
+        out = np.random.randn(*shape).astype(np.float32)
+        out *= std / np.sqrt(np.square(out).sum(axis=0, keepdims=True))
+        return tf.constant(out)
+    return _initializer
