@@ -65,6 +65,8 @@ class AC_Network():
                     self.actions_onehot = tf.one_hot(self.actions,conf.a_size,dtype=tf.float32)
                     self.responsible_outputs = tf.reduce_sum(self.policy * self.actions_onehot, [1])
                     self.entropy = - tf.reduce_sum(self.policy * tf.log(self.policy))
+                    # responsible outputs are a probability
+                    # advantages are negative numbers
                     self.policy_loss = -tf.reduce_sum(tf.log(self.responsible_outputs)*self.advantages)
                 else:
                     self.actions = tf.placeholder(shape=[None,4],dtype=tf.float32)
@@ -73,7 +75,7 @@ class AC_Network():
                                                                                        tf.sqrt(self.policy_variances))
                     self.policy_loss = -tf.reduce_sum(tf.log(self.policy_dist.pdf(self.actions))*self.advantages)
 
-                self.loss = 0.5 * self.value_loss + self.policy_loss - self.entropy * 0.05
+                self.loss = 0.5 * self.value_loss + self.policy_loss - self.entropy * conf.entropy_loss_weight
 
                 #Get gradients from local network using local losses
                 local_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)

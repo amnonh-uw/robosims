@@ -24,8 +24,8 @@ class config(EasyDict):
     def __init__(self):
         # a3c
         self.num_workers = 1
-        self.max_episode_length = 300
-        self.episode_buffer_size = 30
+        self.max_episode_length = 100
+        self.episode_buffer_size = 10
 
         # image resolution
         self.h_size = 400
@@ -64,12 +64,15 @@ class config(EasyDict):
         self.bfs_grid_z = 0.5
 
         # heuristic
-        self.reward_heuristic_weight = 0.80
+        self.reward_heuristic_weight = 0.
 
         # gif
         self.gif_fps = 20
         self.base_class = 'GoogleNet'
         self.load_base_weights = True
+
+        # loss
+        self.entropy_loss_weight = 0.
 
         self.learning_rate = 1e-4
 

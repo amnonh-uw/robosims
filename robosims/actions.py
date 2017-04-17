@@ -1,11 +1,15 @@
 from enum import IntEnum
 
 class DiscreteAction(IntEnum):
-    DoNothing = 0
-    MoveRight = 1
-    Moveleft = 2
-    MoveUp = 3
-    MoevDown = 4
+    Nothing = 0
+    Right = 1
+    Left = 2
+    Up = 3
+    Down = 4
+    Forward = 5
+    Backward = 6
+    Clockwise = 7
+    AntiClockwise = 8
         
 class ActionBuilder(object):
     @staticmethod

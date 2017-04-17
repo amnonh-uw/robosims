@@ -41,10 +41,16 @@ class Worker():
         # generate the advantage and discounted returns. 
         # The advantage function uses "Generalized Advantage Estimation"
         self.rewards_plus = np.asarray(rewards.tolist() + [bootstrap_value])
+        print("rewards_plus: {}".format(self.rewards_plus))
+        # discount then strip the last element, which doesn't correspond to an action, but to our "bootstrap value"
         discounted_rewards = discount(self.rewards_plus,gamma)[:-1]
+        print("discounted_rewards: {}".format(discounted_rewards))
         self.value_plus = np.asarray(values.tolist() + [bootstrap_value])
+        print("value_plus: {}".format(self.value_plus))
+        #
         advantages = rewards + gamma * self.value_plus[1:] - self.value_plus[:-1]
         advantages = discount(advantages,gamma)
+        print("advantages: {}".format(advantages))
 
         # Update the global network using gradients from loss
         # Generate network statistics to periodically save
@@ -67,13 +73,8 @@ class Worker():
             feed_dict=feed_dict)
 
 
-        for i in range(s_inputs.shape[0]):
-            print("actions[{}]={}".format(i, actions[i]))
-            print("advantages[{}]={}".format(i, advantages[i]))
-            print("responsible outputs[{}]={}".format(i, r_o[i]))
-            print("discounted_rewards[{}]={}".format(i, discounted_rewards[i]))
-            print("value_plus[{}]={}".format(i, self.value_plus[i]))
-
+        print("responsible_outputs: {}".format(r_o))
+        print("advantages: {}".format(advantages))
         print("losses: policy {} value {} entropy {}".format(p_l, v_l, e_l))
         return v_l / len(rollout),p_l / len(rollout),e_l / len(rollout), g_n,v_n
         
@@ -116,7 +117,8 @@ class Worker():
                         a = np.random.choice(a_dist[0],p=a_dist[0])
                         a = np.argmax(a_dist == a)
 
-                        r = self.env.take_discrete_action(a) / 100.0
+                        r = self.env.take_discrete_action(a) 
+                        # / 100.0
                     else:
                         # Take an action using random gaussian from the policy network output
                         means, variances, v = sess.run([self.local_AC.policy_means,self.local_AC.policy_variances, self.local_AC.value],
@@ -132,7 +134,8 @@ class Worker():
                         ry = random.normalvariate(means[0, 3], math.sqrt(variances[0, 3]))
                         a = [x, y, z, ry]
 
-                        r = self.env.take_continous_action(x, y, z, ry) / 100.0
+                        r = self.env.take_continous_action(x, y, z, ry)
+                        # / 100.0
 
                     d = self.env.is_episode_finished()
                     if d == False:
@@ -170,7 +173,7 @@ class Worker():
                                    self.local_AC.sensor_input:[sensor_input]})[0,0]
 
                         # average bootstrap value with heuristic
-                        h = self.env.reward_heuristic()
+                        h = self.env.next_step_heuristic()
                         v1 = h * conf.reward_heuristic_weight + v1 * (1-conf.reward_heuristic_weight)
 
                         v_l,p_l,e_l,g_n,v_n = self.train(episode_buffer,sess,conf.gamma,v1)
@@ -233,3 +236,11 @@ def process_frame(frame):
 def discount(x, gamma):
     return scipy.signal.lfilter([1], [1, -gamma], x[::-1], axis=0)[::-1]
 
+def discount_rewards(r, gamma):
+    """ take 1D float array of rewards and compute discounted reward """
+    discounted_r = np.zeros_like(r)
+    running_add = 0
+    for t in reversed(range(0, r.size)):
+        running_add = running_add * gamma + r[t]
+        discounted_r[t] = running_add
+    return discounted_r

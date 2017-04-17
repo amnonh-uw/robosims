@@ -2,7 +2,7 @@ import math
 import random
 import numpy as np
 import robosims.server
-from robosims.actions import ActionBuilder
+from robosims.actions import *
 
 class UnityGame:
     def __init__(self, args, port=0, start_unity = True):
@@ -85,26 +85,29 @@ class UnityGame:
         action = ActionBuilder.setPosition(x, y, z)
         return self.step(action)
 
+    def discrete_action_heuristic(self):
+        pass
+
     def take_discrete_action(self, a):
         self.action_counter += 1
 
-        if a == 0:
+        if a == DiscreteAction.Nothing:
             event = self.take_add_position_action(0, 0, 0)
-        elif a == 1:
+        elif a == DiscreteAction.Right:
             event = self.take_add_position_action(self.conf.discrete_action_distance, 0, 0)
-        elif a == 2:
+        elif a == DiscreteAction.Left:
             event = self.take_add_position_action(-self.conf.discrete_action_distance, 0, 0)
-        elif a == 3:
+        elif a == DiscreteAction.Up:
             event = self.take_add_position_action(0, self.conf.discrete_action_distance, 0)
-        elif a == 4:
+        elif a == DiscreteAction.Down:
             event = self.take_add_position_action(0, -self.conf.discrete_action_distance, 0)
-        elif a == 5:
+        elif a == DiscreteAction.Forward:
             event = self.take_add_position_action(0, 0, self.conf.discrete_action_distance)
-        elif a == 6:
+        elif a == DiscreteAction.Backward:
             event = self.take_add_position_action(0, 0, -self.conf.discrete_action_distance)
-        elif a == 7:
+        elif a == DiscreteAction.Clockwise:
             event = self.take_add_rotation_action(0, self.conf.discrete_action_rotation, 0)
-        elif a == 8:
+        elif a == DiscreteAction.AntiClockwise:
             event = self.take_add_rotation_action(0, -self.conf.discrete_action_rotation, 0)
 
         self.s_frame = event.frame
@@ -140,9 +143,10 @@ class UnityGame:
             self.episode_finished = True
             return self.conf.close_enough_reward
 
-        return self.conf.step_reward
+        # return self.conf.step_reward
+        return -self.steps_left_heuristic()
 
-    def reward_heuristic(self):
+    def steps_left_heuristic(self):
         steps = 0
         if self.conf.discrete_actions:
             delta = np.asarray(self.t_pos) - np.asarray(self.s_pos)
@@ -152,28 +156,17 @@ class UnityGame:
             delta = np.asarray(self.t_rot) - np.asarray(self.s_rot)
             for d in delta:
                 steps += abs(int(d / self.conf.discrete_action_rotation))
-
-            print("heuristic steps {}".format(steps))
-            return self.conf.close_enough_reward + steps * self.conf.step_reward
+            return steps
         else:
-            return self.conf.close_enough_reward - 4
+            return 4
 
     def next_step_heuristic(self):
-        steps = 0
         if self.conf.discrete_actions:
-            delta = np.asarray(self.t_pos) - np.asarray(self.s_pos)
-            for d in delta:
-                steps += abs(int(d / self.conf.discrete_action_distance))
-
-            delta = np.asarray(self.t_rot) - np.asarray(self.s_rot)
-            for d in delta:
-                steps += abs(int(d / self.conf.discrete_action_rotation))
-
-            h =  self.conf.close_enough_reward + steps * self.conf.step_reward
+            h = self.conf.close_enough_reward + self.steps_left_heuristic() * self.conf.step_reward
             print("next_step_heuristic {}".format(h))
             return h
         else:
-            return self.conf.close_enough_reward - 4
+            return self.conf.close_enough_reward - self.stpes.left_heurisitc()
 
     def get_structure_info(self):
         # first figure out where the structure is and what its size is
