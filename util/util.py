@@ -43,22 +43,26 @@ def make_gif(conf, episode_target_frame, episode_source_frames, episode_count):
 
     writer.close()
 
-def make_image(source, dest, source_caption_text, dest_caption_text = ""):
+def make_image(source, dest, s_cap_text, d_cap_text = "", s_cap_text2 = "", d_cap_text2 = ""):
     seperator_width = 4
-    text_height_margin = 2
+    text_height_margin = 4
     source_width_margin = 10
 
     font = ImageFont.load_default()
     source_draw = ImageDraw.Draw(source)
-    _, text_height = source_draw.textsize(source_caption_text, font=font)
-    text_height += 2 * text_height_margin
+    _, text_height = source_draw.textsize(s_cap_text, font=font)
+    caption_height = text_height * 2 + 3 * text_height_margin
+    line1_height = text_height_margin
+    line2_height = text_height_margin  * 2 + text_height
     dest_width_margin = source.size[0] + seperator_width + source_width_margin
     width = source.size[0] + dest.size[0] + seperator_width
 
-    caption = Image.new('RGB', (width, text_height))
+    caption = Image.new('RGB', (width, caption_height))
     caption_draw = ImageDraw.Draw(caption)
-    caption_draw.text((source_width_margin,text_height_margin), source_caption_text, font=font)
-    caption_draw.text((dest_width_margin,text_height_margin), dest_caption_text, font=font)
+    caption_draw.text((source_width_margin,line1_height), s_cap_text, font=font)
+    caption_draw.text((dest_width_margin,line1_height), d_cap_text, font=font)
+    caption_draw.text((source_width_margin,line2_height), s_cap_text2, font=font)
+    caption_draw.text((dest_width_margin,line2_height), d_cap_text2, font=font)
 
     height = source.size[1] + text_height
     seperator = Image.new('RGB', (seperator_width, height))
@@ -80,7 +84,9 @@ def make_jpg(conf, prefix, env, model, pred_value, episode_count, loss=None):
     else:
         draw_text = "loss="+ str(loss) + " " + err_str
 
-    stacked = make_image(im_s, im_t, "source " + draw_text, "dest")
+    stacked = make_image(im_s, im_t,
+            "source " + draw_text, "dest",
+            env.source_str(), env.target_str())
     stacked.save(conf.frames_path + "/" +  prefix + str(episode_count)+'.jpg')
 
 def vstack_images(images):

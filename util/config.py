@@ -46,6 +46,7 @@ class config(EasyDict):
         # distance between source and destination
         self.max_distance_delta = 1
         self.max_rotation_delta = 3
+        self.probe_distance = 1
 
         # rewards
         self.collision_reward = -1000

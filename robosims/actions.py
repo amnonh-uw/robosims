@@ -39,6 +39,15 @@ class ActionBuilder(object):
         return action
 
     @staticmethod
+    def probe(x, y, z, d):
+        action = dict(actionName='probe')
+        p = (x, y, z)
+        action['actionVector'] = p
+        p2 = (d, 0, 0)
+        action['actionVector2'] = p2
+        return action
+
+    @staticmethod
     def addPositionRotation(x, y, z, rx, ry, rz):
         action = dict(actionName='addPositionRotation')
         p = (x, y, z)

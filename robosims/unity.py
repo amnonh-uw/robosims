@@ -85,6 +85,14 @@ class UnityGame:
         action = ActionBuilder.setPosition(x, y, z)
         return self.step(action)
 
+    def take_set_rotation_action(self, rx, ry, rz):
+        action = ActionBuilder.setRotation(rx, ry, rz)
+        return self.step(action)
+
+    def take_probe_action(self, x, y, z, d):
+        action = ActionBuilder.probe(x, y, z, d)
+        return self.step(action)
+
     def discrete_action_heuristic(self):
         pass
 
@@ -170,8 +178,7 @@ class UnityGame:
 
     def get_structure_info(self):
         # first figure out where the structure is and what its size is
-        action = ActionBuilder.addPosition(0, 0, 0)
-        event = self.step(action)
+        event = self.take_add_position_action(0, 0, 0)
         structure = event.metadata['structure']
         # print(structure)
         # position = structure['position']
@@ -201,6 +208,25 @@ class UnityGame:
         self.max_y = 3.9
         self.max_z = 13.4
 
+    def valid_pose(self, x, y, z, r):
+        #move to target
+        event = self.take_set_position_action(self.t_x, self.t_y, self.t_z)
+        if self.collision:
+            return None
+
+
+        # rotate to target
+        event = self.take_set_rotation_action(0, self.t_r, 0)
+        if self.collision:
+            return None
+
+        if self.conf.probe_distance != 0:
+            event = self.take_probe_action(0, 0, 1, self.conf.probe_distance)
+            if self.collision:
+                print("proble collision")
+                return None
+
+        return event
 
     def gen_new_episode(self):
         self.min_r = 0
@@ -209,24 +235,8 @@ class UnityGame:
         while True:
             self.s_x, self.s_y, self.s_z, self.s_r = self.random_source_pose()
             self.t_x, self.t_y, self.t_z, self.t_r = self.random_target_pose()
-
-            # print("x: {} vs {}".format(self.s_x, self.t_x))
-            # print("y: {} vs {}".format(self.s_y, self.t_y))
-            # print("z: {} vs {}".format(self.s_z, self.t_z))
-            # print("r: {} vs {}".format(self.s_r, self.t_r))
-
-            # move to target
-            action = ActionBuilder.setPosition(self.t_x, self.t_y, self.t_z)
-            self.step(action)
-            if self.collision:
-                print('collision on target, retrying')
-                continue
-
-            # rotate to target
-            action = ActionBuilder.setRotation(0, self.t_r, 0)
-            self.t = self.step(action)
-            if self.collision:
-                print('collision on target, retrying')
+            self.t = self.valid_pose(self.t_x, self.t_y, self.t_z, self.t_r)
+            if self.t is None:
                 continue
 
             agent = self.t.metadata['agent']
@@ -235,26 +245,11 @@ class UnityGame:
             self.extract_target_pose()
             self.t_frame = self.t.frame
 
-            # input("Hit enter to accept target")
-            break
-
-        while True:
-            # move to source
-            action = ActionBuilder.setPosition(self.s_x, self.s_y, self.s_z)
-            self.step(action)
-            if self.collision:
-                print('collision on source, retrying')
-                continue
-
-            # rotate to source
-            action = ActionBuilder.setRotation(0, self.s_r, 0)
-            self.s = self.step(action)
-            if self.collision:
-                print('collision on source, retrying')
+            self.s = self.valid_pose(self.s_x, self.s_y, self.s_z, self.s_r)
+            if self.s is None:
                 continue
 
             self.s_frame = self.s.frame
-            # input("Hit enter to accept source")
             break
 
     def extract_position(self, p):
@@ -319,6 +314,12 @@ class UnityGame:
         g = np.random.uniform(min_g, max_g)
 
         return self.grid_round(g, grid)
+
+    def source_string(self):
+        return str(self.s_pos) + str(self.s_rot)
+
+    def target_str(self):
+        return str(self.t_pos) + str(self.t_rot)
 
 class UnityState:
     def __init__(self, s_frame, t_frame, collision):
