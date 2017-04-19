@@ -317,7 +317,7 @@ class UnityGame:
 
         return self.grid_round(g, grid)
 
-    def source_string(self):
+    def source_str(self):
         return str(self.s_pos) + str(self.s_rot)
 
     def target_str(self):
