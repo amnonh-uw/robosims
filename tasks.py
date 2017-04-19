@@ -80,7 +80,7 @@ def push_linux_build(context):
     zipf.write(exec_path, ENV + '-Linux64')
     zipf.close()
 
-    context.run("scp %s amnonh@ava:builds" % archive_name)
+    context.run("scp %s amnonh@ava.cs.washington.edu:builds" % archive_name)
 
     # s3 = boto3.resource('s3')
     # key = 'builds/%s' % (build_name,)

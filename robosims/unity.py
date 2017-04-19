@@ -210,13 +210,13 @@ class UnityGame:
 
     def valid_pose(self, x, y, z, r):
         #move to target
-        event = self.take_set_position_action(self.t_x, self.t_y, self.t_z)
+        event = self.take_set_position_action(x, y,z)
         if self.collision:
             return None
 
 
         # rotate to target
-        event = self.take_set_rotation_action(0, self.t_r, 0)
+        event = self.take_set_rotation_action(0, r, 0)
         if self.collision:
             return None
 
@@ -251,6 +251,8 @@ class UnityGame:
 
             self.s_frame = self.s.frame
             break
+
+        print("new episode {}{}-{}{}".format(self.s_pos, self.s_rot, self.t_pos, self.t_rot))
 
     def extract_position(self, p):
         return (self.grid_round(p['x'], self.conf.grid_distance),

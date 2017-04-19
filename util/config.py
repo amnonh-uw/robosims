@@ -73,7 +73,7 @@ class config(EasyDict):
         self.load_base_weights = True
 
         # loss
-        self.entropy_loss_weight = 0.
+        self.entropy_loss_weight = 10.
 
         self.learning_rate = 1e-4
 
