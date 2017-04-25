@@ -116,7 +116,7 @@ class Controller(object):
 
         window_id = None
         pre_children = wc()
-        for i in range(10):
+        for i in range(100):
             time.sleep(0.2)
             if not process_alive(pid):
                 raise Exception("process died %s " % pid)

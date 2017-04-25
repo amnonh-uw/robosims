@@ -41,16 +41,16 @@ class Worker():
         # generate the advantage and discounted returns. 
         # The advantage function uses "Generalized Advantage Estimation"
         self.rewards_plus = np.asarray(rewards.tolist() + [bootstrap_value])
-        print("rewards_plus: {}".format(self.rewards_plus))
+        # print("rewards_plus: {}".format(self.rewards_plus))
         # discount then strip the last element, which doesn't correspond to an action, but to our "bootstrap value"
         discounted_rewards = discount(self.rewards_plus,gamma)[:-1]
-        print("discounted_rewards: {}".format(discounted_rewards))
+        # print("discounted_rewards: {}".format(discounted_rewards))
         self.value_plus = np.asarray(values.tolist() + [bootstrap_value])
-        print("value_plus: {}".format(self.value_plus))
+        # print("value_plus: {}".format(self.value_plus))
         #
         advantages = rewards + gamma * self.value_plus[1:] - self.value_plus[:-1]
         advantages = discount(advantages,gamma)
-        print("advantages: {}".format(advantages))
+        # print("advantages: {}".format(advantages))
 
         # Update the global network using gradients from loss
         # Generate network statistics to periodically save
@@ -73,8 +73,8 @@ class Worker():
             feed_dict=feed_dict)
 
 
-        print("responsible_outputs: {}".format(r_o))
-        print("advantages: {}".format(advantages))
+        # print("responsible_outputs: {}".format(r_o))
+        # print("advantages: {}".format(advantages))
         print("losses: policy {} value {} entropy {}".format(p_l, v_l, e_l))
         return v_l / len(rollout),p_l / len(rollout),e_l / len(rollout), g_n,v_n
         
@@ -109,10 +109,17 @@ class Worker():
                 while self.env.is_episode_finished() == False:
                     if conf.discrete_actions:
                         # Take an action using probabilities from policy network output.
-                        a_dist,v = sess.run([self.local_AC.policy,self.local_AC.value],
+                        a_dist,v,e = sess.run([self.local_AC.policy,self.local_AC.value, self.local_AC.entropy],
                             feed_dict={self.local_AC.s_input:[s_input],
                                         self.local_AC.t_input:[t_input],
                                         self.local_AC.sensor_input:[sensor_input]})
+
+                        print("action entropy: {}".format(e))
+                        print("action distribution: {}".format(np.around(a_dist[0], 2)))
+                
+                        if np.sum(a_dist[0]) < 0.9:
+                            print("action distribution doesn't sum up to 1!")
+                            exit
 
                         a = np.random.choice(a_dist[0],p=a_dist[0])
                         a = np.argmax(a_dist == a)

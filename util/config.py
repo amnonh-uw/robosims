@@ -44,7 +44,7 @@ class config(EasyDict):
         self.close_enough_rotation = 1
 
         # distance between source and destination
-        self.max_distance_delta = 1
+        self.max_distance_delta = 0.1
         self.max_rotation_delta = 3
         self.probe_distance = 1
 
@@ -73,7 +73,9 @@ class config(EasyDict):
         self.load_base_weights = True
 
         # loss
-        self.entropy_loss_weight = 10.
+        self.entropy_loss_weight = 500.
+        self.value_loss_weight = 0.5
+        self.policy_loss_weight = 0.5
 
         self.learning_rate = 1e-4
 
@@ -82,6 +84,6 @@ class config(EasyDict):
             y = yaml.safe_load(stream)
             for k, v in y.items():
                 assert k in self, '{} is not a valid config parameter.'.format(k)
-                assert type(v) == type(self[k]), 'type of parameter {} is not matched'.format(k)
+                assert type(v) == type(self[k]), 'type of parameter {} is not matched: {} {}'.format(k, type(v), type(self[k]))
     
             self[k] = v

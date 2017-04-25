@@ -179,7 +179,7 @@ def bfs(context, port=0, start_unity=True):
 @task
 def train_a3c(context, port=0, start_unity=True):
     sys.path.append("./networks")
-    a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
+    a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml'])
 
 @task
 def train_distance(context, port=0, start_unity=True):
@@ -196,7 +196,7 @@ def test_distance(context, port=0, start_unity=True):
 @task
 def train_direction(context, port=0, start_unity=True):
     sys.path.append("./networks")
-    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
+    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=learn_direction/train.yaml'])
 
 @task
 def test_direction(context, port=0, start_unity=True):
