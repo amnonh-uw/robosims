@@ -168,7 +168,7 @@ class Controller(object):
             if platform.system() == 'Linux':
                 atexit.register(lambda: os.kill(self.pid, signal.SIGKILL))
                 wc = self.setup_window_children(env['DISPLAY'])
-                self.server.xwindow_id = self.find_xwindow_id(pid, wc)
+                self.server.xwindow_id = self.find_xwindow_id(self.pid, wc)
                 self.server.window_children = wc
 
         self.server.start()
