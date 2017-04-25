@@ -62,7 +62,7 @@ class UnityGame:
 
     def new_episode(self):
         if self.controller == None:
-            tmp_dict = cPickle.load(self.dataset).__dict__
+            tmp_dict = pickle.load(self.dataset).__dict__
 
             self.__dict__.update(tmp_dict) 
         else:
