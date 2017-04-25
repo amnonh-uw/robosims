@@ -15,6 +15,7 @@ import re
 from a3c.train import train as a3c_train
 from learn_distance.train import train as distance_network_train
 from learn_direction.train import train as direction_network_train
+from gen_dataset.gen_dataset import gen_dataset
 from util.bfs import run_bfs
 
 S3_BUCKET='ai2-vision-robosims'
@@ -179,7 +180,7 @@ def bfs(context, port=0, start_unity=True):
 @task
 def train_a3c(context, port=0, start_unity=True):
     sys.path.append("./networks")
-    a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml'])
+    a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml', '--partial-load-model=model_direction/model-1500.cptk' ])
 
 @task
 def train_distance(context, port=0, start_unity=True):
@@ -204,3 +205,14 @@ def test_direction(context, port=0, start_unity=True):
     direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml',
     '--load-model',
     '--test-only'])
+
+@task
+def train_distance_pkl(context, port=0, start_unity=True):
+    sys.path.append("./networks")
+    distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--dataset=1m.pkl'])
+
+@task
+def gen_datasets(context, port=0, start_unity=True):
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm.yaml', '--dataset=50cm.pkl' ])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm.yaml', '--dataset=20cm.pkl' ])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m.yaml', '--dataset=1m.pkl' ])

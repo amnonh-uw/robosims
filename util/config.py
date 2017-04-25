@@ -6,14 +6,17 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(description='a3c train')
     parser.add_argument('--load-model', dest='load_model', action='store_true')
     parser.add_argument('--no-load_model', dest='load_model', action='store_false')
+    parser.add_argument('--partial-load-model', type=str, default=None)
     parser.add_argument('--server-config', type=str, default=None)
     parser.add_argument('--config', type=str, default=None)
     parser.add_argument('--iter', type=int, default=0)
     parser.add_argument('--test-only', dest='test_only', action='store_true')
+    parser.add_argument('--dataset', type=str, default=None)
     parser.set_defaults(load_model=False)
     parser.set_defaults(test_only=False)
 
     args = parser.parse_args(argv)
+    args.gen_dataset = False
     args.conf = config()
     if args.config != None:
         args.conf.load(args.config)
@@ -37,16 +40,16 @@ class config(EasyDict):
 
         # dicrete grid
         self.discrete_action_distance = 0.1
-        self.discrete_action_rotation = 1
+        self.discrete_action_rotation = 1.
 
         # criteria for goal success
         self.close_enough_distance = 0.01
-        self.close_enough_rotation = 1
+        self.close_enough_rotation = 1.
 
         # distance between source and destination
         self.max_distance_delta = 0.1
-        self.max_rotation_delta = 3
-        self.probe_distance = 1
+        self.max_rotation_delta = 3.
+        self.probe_distance = 1.
 
         # rewards
         self.collision_reward = -1000
@@ -71,6 +74,7 @@ class config(EasyDict):
         self.gif_fps = 20
         self.base_class = 'GoogleNet'
         self.load_base_weights = True
+        # self.load_base_weights = False
 
         # loss
         self.entropy_loss_weight = 500.

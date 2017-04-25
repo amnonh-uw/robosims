@@ -36,7 +36,7 @@ def train(argv):
     with tf.device("/cpu:0"): 
         global_episodes = tf.Variable(0,dtype=tf.int32,name='global_episodes',trainable=False)
         trainer = tf.train.AdamOptimizer(learning_rate=conf.learning_rate)
-        master_network = AC_Network(conf, 'global',None) # Generate global network
+        master_network = AC_Network(conf, 'main',None) # Generate global network
         workers = []
         # Create worker classes
         for i in range(conf.num_workers):
@@ -49,6 +49,9 @@ def train(argv):
             print('Loading Model...')
             ckpt = tf.train.get_checkpoint_state(model_path)
             saver.restore(sess,ckpt.model_checkpoint_path)
+        elif args.partial_load_model != None:
+            sess.run(tf.global_variables_initializer())
+            optimistic_restore(sess, args.partial_load_model)
         else:
             sess.run(tf.global_variables_initializer())
             with sess.as_default(), sess.graph.as_default():

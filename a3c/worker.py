@@ -199,7 +199,6 @@ class Worker():
                                 
                     
                 # Periodically save gifs of episodes, model parameters, and summary statistics.
-
                 if episode_count % 5 == 0 and episode_count != 0:
                     if self.name == 'worker_0' and episode_count % 25 == 0:
                         make_gif(conf, episode_target_frame, episode_source_frames, episode_count)

@@ -3,24 +3,38 @@ import random
 import numpy as np
 import robosims.server
 from robosims.actions import *
+import pickle
 
 class UnityGame:
     def __init__(self, args, port=0, start_unity = True):
-        self.controller = robosims.server.Controller(args.server_config)
-        self.controller.start(port, start_unity)
         self.conf = args.conf
+        if args.dataset == None or args.gen_dataset:
+            self.controller = robosims.server.Controller(args.server_config)
+            self.controller.start(port, start_unity)
+            self.get_structure_info()
+        else:
+            self.controller = None
+            self.dataset = open(args.dataset, 'rb')
 
-        self.get_structure_info()
         random.seed()
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['controller']
+        return state
+
     def close (self):
-        self.controller.stop()
+        if self.controller != None:
+            self.controller.stop()
+        else:
+            self.dataset.close()
 
     def reset(self):
         self.controller.reset()
 
     def stop(self):
-        self.controller.stop()
+        if self.controller != None:
+            self.controller.stop()
 
     def distance(self):
         delta = np.asarray(self.t_pos) - np.asarray(self.s_pos)
@@ -47,11 +61,15 @@ class UnityGame:
         return b
 
     def new_episode(self):
-        self.episode_finished = False
-        self.gen_new_episode()
-        self.collision = False
-        self.action_counter = 0
-        # print("starting new episode")
+        if self.controller == None:
+            tmp_dict = cPickle.load(self.dataset).__dict__
+
+            self.__dict__.update(tmp_dict) 
+        else:
+            self.episode_finished = False
+            self.gen_new_episode()
+            self.collision = False
+            self.action_counter = 0
 
     def get_state(self):
         return UnityState(self.s_frame, self.t_frame, self.collision)

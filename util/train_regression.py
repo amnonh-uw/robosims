@@ -144,6 +144,8 @@ def train_regression(args, model_cls):
         except KeyboardInterrupt:
             print("W: interrupt received, stopping…")
             exit()
+        except (EOFError):
+            print("end of pickled file reached")
         finally:
             env.close()
 

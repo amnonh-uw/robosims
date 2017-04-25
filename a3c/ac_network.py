@@ -55,7 +55,7 @@ class AC_Network():
                 biases_initializer=None, scope='value')
             
             #Only the worker network need ops for loss functions and gradient updating.
-            if scope != 'global':
+            if scope != 'main':
                 self.target_v = tf.placeholder(shape=[None],dtype=tf.float32)
                 self.value_loss = 0.5 * tf.reduce_sum(tf.square(self.target_v - tf.reshape(self.value,[-1])))
                 self.advantages = tf.placeholder(shape=[None],dtype=tf.float32)
@@ -85,7 +85,7 @@ class AC_Network():
                 grads,self.grad_norms = tf.clip_by_global_norm(self.gradients,40.0)
                 
                 #Apply local gradients to global network
-                global_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'global')
+                global_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'main')
                 self.apply_grads = trainer.apply_gradients(zip(grads,global_vars))
 
     def load(self, data_path, session):
