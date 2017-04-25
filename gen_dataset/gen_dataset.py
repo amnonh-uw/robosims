@@ -24,7 +24,7 @@ def gen_dataset(argv):
     with open(args.dataset, 'wb') as dataset:
         for i in range(0, train_iter):
             env.new_episode()
-            pickle.dump(env, dataset, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(env, dataset, pickle.HIGHEST_PROTOCOL)
 
 if __name__ == "__main__":
     gen_dataset(sys.argv[1:])
