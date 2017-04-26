@@ -20,7 +20,10 @@ def parse_args(argv):
     args.gen_dataset = False
     args.conf = config()
     if args.config != None:
+        print("loading config file")
         args.conf.load(args.config)
+
+    print(args.conf)
 
     return args
 
@@ -93,4 +96,4 @@ class config(EasyDict):
                 assert k in self, '{} is not a valid config parameter.'.format(k)
                 assert type(v) == type(self[k]), 'type of parameter {} is not matched: {} {}'.format(k, type(v), type(self[k]))
     
-            self[k] = v
+                self[k] = v

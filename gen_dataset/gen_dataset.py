@@ -21,6 +21,7 @@ def gen_dataset(argv):
     if args.dataset == None:
         print("--dataset required")
         
+    print(conf)
     print("generating {} samples to {}".format(train_iter, args.dataset))
     with gzip.open(args.dataset, 'wb') as dataset:
         for i in range(0, train_iter):
