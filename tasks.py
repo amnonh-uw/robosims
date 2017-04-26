@@ -146,7 +146,7 @@ EndSection
 def startx(context, display=15):
     if platform.system() != 'Linux':
         raise Exception("Can only run startx on linux")
-    records = list(filter(lambda r: r.get('Vendor', '') == 'NVIDIA Corporation' and (r['Class'] == 'VGA compatible controller' or r['Class'] == '3D controller')), pci_records()))
+    records = list(filter(lambda r: r.get('Vendor', '') == 'NVIDIA Corporation' and (r['Class'] == 'VGA compatible controller' or r['Class'] == '3D controller')), pci_records())
 
     if not records:
         raise Exception("no nvidia cards found")
