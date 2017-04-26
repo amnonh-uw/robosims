@@ -17,10 +17,19 @@ class Distance_Model:
 
         # Mean squared error
         self.distance = tf.placeholder(tf.float32, name='distance', shape=[None, 1])
-        self.loss = tf.nn.l2_loss(self.pred_distance - self.distance, name='loss')
+        self.l2_loss = tf.nn.l2_loss(self.pred_distance - self.distance, name='loss')
 
         max_distance = math.sqrt(3 * conf.max_distance_delta * conf.max_distance_delta)
         self.mid_loss = 0.5 * max_distance * max_distance
+        self.max_loss = max_distance * max_distance
+
+        if conf.loss_clip_min != None:
+            clip_value_min = self.max_loss * conf.loss_clip_min
+            clip_value_max = self.max_loss * conf.loss_clip_max
+            self.loss = tf.clip_by_value(self.l2_loss, clip_value_min, clip_value_max, name='loss')
+        else:
+            self.loss = self.l2_loss
+
         print("max distance is {} chance loss is {}".format(max_distance, self.chance_loss()))
 
     def pred_tensor(self):
@@ -34,6 +43,9 @@ class Distance_Model:
 
     def chance_loss(self):
         return self.mid_loss
+
+    def max_loss(self):
+        return self.max_loss
 
     def true_value(self, env):
         return(np.reshape(env.distance(), [1,1]))

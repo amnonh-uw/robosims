@@ -83,6 +83,10 @@ class config(EasyDict):
         # self.load_base_weights = False
 
         # loss
+        self.loss_clip_min = None
+        self.loss_clip_max = None
+        # self.loss_clip_min = 0.1        # 10%
+        # self.loss_clip_max = 1.1        # 110%
         self.entropy_loss_weight = 500.
         self.value_loss_weight = 0.5
         self.policy_loss_weight = 0.5
