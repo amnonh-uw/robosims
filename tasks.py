@@ -81,7 +81,7 @@ def push_linux_build(context):
     zipf.write(exec_path, ENV + '-Linux64')
     zipf.close()
 
-    context.run("scp %s amnonh@ava.cs.washington.edu:builds" % archive_name)
+    context.run("scp %s amnonh@baymax.cs.washington.edu:builds" % archive_name)
 
     # s3 = boto3.resource('s3')
     # key = 'builds/%s' % (build_name,)
@@ -207,12 +207,23 @@ def test_direction(context, port=0, start_unity=True):
     '--test-only'])
 
 @task
-def train_distance_pkl(context, port=0, start_unity=True):
-    sys.path.append("./networks")
-    distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--dataset=1m.pkl'])
+def gen_datasets(context, port=0, start_unity=True):
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm.yaml', '--dataset=/Volumes/Datasets/50cm.pklz' ])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm.yaml', '--dataset=/Volumes/Datasets/20cm.pklz' ])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m.yaml', '--dataset=/Volumes/Datasets/1m.pklz' ])
 
 @task
-def gen_datasets(context, port=0, start_unity=True):
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm.yaml', '--dataset=50cm.pkl' ])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm.yaml', '--dataset=20cm.pkl' ])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m.yaml', '--dataset=1m.pkl' ])
+def train_direction_1m(context, port=0, start_unity=True):
+    sys.path.append("./networks")
+    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=learn_direction/train.yaml', '--dataset=1m.pklz'])
+
+@task
+def train_direction_20cm(context, port=0, start_unity=True):
+    sys.path.append("./networks")
+    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=learn_direction/train.yaml', '--dataset=20cm.pklz'])
+
+@task
+def train_direction_50cm(context, port=0, start_unity=True):
+    sys.path.append("./networks")
+    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=learn_direction/train.yaml', '--dataset=50cm.pklz'])
+

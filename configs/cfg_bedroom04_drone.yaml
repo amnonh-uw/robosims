@@ -1,5 +1,5 @@
 ENV_BUILD_DARWIN: projects/Bedroom04/builds/bedroom_04-OSXIntel64.app
-ENV_BUILD_LINUX: unity/builds/living-room-Linux64
+ENV_BUILD_LINUX: projects/Bedroom04/builds/bedroom_04-Linux64
 TRAIN_PHASE: True
 X_DISPLAY: "0.0"
 

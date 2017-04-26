@@ -9,4 +9,7 @@ Pillow
 xcffib
 cffi
 mss
-images2jpf
+easydict
+xcffib
+imageio
+mss

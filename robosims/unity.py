@@ -4,6 +4,7 @@ import numpy as np
 import robosims.server
 from robosims.actions import *
 import pickle
+import gzip
 
 class UnityGame:
     def __init__(self, args, port=0, start_unity = True):
@@ -14,7 +15,7 @@ class UnityGame:
             self.get_structure_info()
         else:
             self.controller = None
-            self.dataset = open(args.dataset, 'rb')
+            self.dataset = gzip.open(args.dataset, 'rb')
 
         random.seed()
 
