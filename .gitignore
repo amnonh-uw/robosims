@@ -25,6 +25,7 @@ ExportedObj/
 *.svd
 *.zip
 *.pkl
+*.pklz
 *.npy
 *.out
 
