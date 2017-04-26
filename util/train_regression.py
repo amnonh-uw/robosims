@@ -21,7 +21,7 @@ def train_regression(args, model_cls):
 
     cheat = False
     model = model_cls(conf, cls, cheat=cheat, trainable=True)
-    make_dirs(model.name(), conf)
+    make_dirs(model.name(), args)
 
     # optimizer_update = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
     # Create an optimizer.

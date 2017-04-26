@@ -12,6 +12,7 @@ def parse_args(argv):
     parser.add_argument('--iter', type=int, default=0)
     parser.add_argument('--test-only', dest='test_only', action='store_true')
     parser.add_argument('--dataset', type=str, default=None)
+    parser.add_argument('--postfix', type=str, default=None)
     parser.set_defaults(load_model=False)
     parser.set_defaults(test_only=False)
 
@@ -25,6 +26,8 @@ def parse_args(argv):
 
 class config(EasyDict):
     def __init__(self):
+        self.postfix = None
+
         # a3c
         self.num_workers = 1
         self.max_episode_length = 100

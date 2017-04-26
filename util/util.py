@@ -9,7 +9,15 @@ import signal
 from robosims.unity import UnityGame
 from PIL import Image, ImageDraw, ImageFont
 
-def make_dirs(postfix, conf):
+def make_dirs(default_postfix, args):
+    conf = args.conf
+    postfix = default_postfix
+
+    if args.postfix is not None:
+        postfix = args.postfix
+    elif conf.postfix != None:
+        postfix = conf.postfix
+
    # Create a directory to save the model to
     conf.model_path = './model_' + postfix
     make_dir(conf.model_path, conf)
