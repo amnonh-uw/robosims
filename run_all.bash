@@ -3,7 +3,7 @@ nohup invoke train_distance --config experiments/train_distance_1m.yaml >& train
 export CUDA_VISIBLE_DEVICES=1
 nohup invoke train_distance --config experiments/train_distance_50cm.yaml >& train_distance_50cm.out & 
 export CUDA_VISIBLE_DEVICES=2
-nohup invoke train_distance --config experiments/train_distance_20cm.yaml >& train_distance_20mm.out & 
+nohup invoke train_distance --config experiments/train_distance_20cm.yaml >& train_distance_20cm.out & 
 export CUDA_VISIBLE_DEVICES=3
 nohup invoke train_direction --config experiments/train_direction_1m.yaml >& train_direction_1m.out & 
 export CUDA_VISIBLE_DEVICES=4
