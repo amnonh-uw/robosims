@@ -23,7 +23,7 @@ def parse_args(argv):
         print("loading config file")
         args.conf.load(args.config)
 
-    if args.dataset is None
+    if args.dataset is None:
         args.dataset = args.conf.dataset
 
     print(args.conf)
@@ -102,6 +102,6 @@ class config(EasyDict):
             y = yaml.safe_load(stream)
             for k, v in y.items():
                 assert k in self, '{} is not a valid config parameter.'.format(k)
-                assert type(v) == type(self[k]), 'type of parameter {} is not matched: {} {}'.format(k, type(v), type(self[k]))
+                assert (type(v) == type(self[k])) or (self[k] == None), 'type of parameter {} is not matched: {} {}'.format(k, type(v), type(self[k]))
     
                 self[k] = v
