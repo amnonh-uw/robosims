@@ -186,28 +186,29 @@ def train_a3c(context, port=0, start_unity=True):
 def train_distance(context, port=0, start_unity=True, config="learn_distance/train.yaml"):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
-    args += "--config=" + config
+    args.append("--config=" + config)
+    print(args)
     distance_network_train(args)
 
 @task
 def test_distance(context, port=0, start_unity=True, config="learn_distnace/test.yaml"):
     sys.path.append("./networks")
-    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only'])
-    args += "--config=" + config
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
+    args.append("--config=" + config)
     distance_network_train(args)
 
 @task
 def train_direction(context, port=0, start_unity=True, config="learn_direction/train.yaml"):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
-    args += "--config=" + config
+    args.append("--config=" + config)
     direction_network_train(args)
 
 @task
 def test_direction(context, port=0, start_unity=True, config="learn_direction/test.html"):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
-    args += "--config=" + config
+    args.append("--config=" + config)
     direction_network_train(args)
 
 @task
