@@ -24,8 +24,10 @@ class Direction_Model:
 
         if conf.loss_clip_min != None:
             clip_value_min = self.max_loss * conf.loss_clip_min
-            clip_value_max = self.max_loss * conf.loss_clip_max
-            self.loss = tf.clip_by_value(self.l2_loss, clip_value_min, clip_value_max, name='loss')
+            clip_value_max = 9999999999
+            print("max loss {} loss_clip_min {} loss_clip_max {}".format(self.max_loss, conf.loss_clip_min, conf.loss_clip_max))
+            print("clipping between {} and {}".format(clip_value_min, clip_value_max))
+            self.loss = tf.clip_by_value(self.l2_loss, clip_value_min, clip_value_max, name='loss') - clip_value_min
         else:
             self.loss = self.l2_loss
 

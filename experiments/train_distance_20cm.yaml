@@ -1,3 +1,4 @@
 learning_rate: 1.e-4
 postfix: distance_20cm
 dataset: 20cm.pklz
+max_distance_delta: 0.2
