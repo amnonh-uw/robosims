@@ -1,3 +1,3 @@
 learning_rate: 1.e-5
-postfix=direction_50cm
-dataset=50cm.pklz
+postfix: direction_50cm
+dataset: 50cm.pklz

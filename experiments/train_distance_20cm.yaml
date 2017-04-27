@@ -1,3 +1,3 @@
 learning_rate: 1.e-4
-postfix=distance_20cm
-dataset=20cm.pklz
+postfix: distance_20cm
+dataset: 20cm.pklz
