@@ -183,28 +183,32 @@ def train_a3c(context, port=0, start_unity=True):
     a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml', '--partial-load-model=model_direction/model-1500.cptk' ])
 
 @task
-def train_distance(context, port=0, start_unity=True):
+def train_distance(context, port=0, start_unity=True, config="learn_distance/train.yaml"):
     sys.path.append("./networks")
-    distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml'])
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
+    args += "--config=" + config
+    distance_network_train(args)
 
 @task
-def test_distance(context, port=0, start_unity=True):
+def test_distance(context, port=0, start_unity=True, config="learn_distnace/test.yaml"):
     sys.path.append("./networks")
-    distance_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml',
-    '--load-model',
-    '--test-only'])
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only'])
+    args += "--config=" + config
+    distance_network_train(args)
 
 @task
-def train_direction(context, port=0, start_unity=True):
+def train_direction(context, port=0, start_unity=True, config="learn_direction/train.yaml"):
     sys.path.append("./networks")
-    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=learn_direction/train.yaml'])
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
+    args += "--config=" + config
+    direction_network_train(args)
 
 @task
-def test_direction(context, port=0, start_unity=True):
+def test_direction(context, port=0, start_unity=True, config="learn_direction/test.html"):
     sys.path.append("./networks")
-    direction_network_train(['--server-config=configs/cfg_bedroom04_drone.yaml',
-    '--load-model',
-    '--test-only'])
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
+    args += "--config=" + config
+    direction_network_train(args)
 
 @task
 def gen_datasets(context, port=0, start_unity=True):

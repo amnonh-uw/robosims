@@ -23,6 +23,9 @@ def parse_args(argv):
         print("loading config file")
         args.conf.load(args.config)
 
+    if args.dataset is None
+        args.dataset = args.conf.dataset
+
     print(args.conf)
 
     return args
@@ -30,6 +33,7 @@ def parse_args(argv):
 class config(EasyDict):
     def __init__(self):
         self.postfix = None
+        self.dataset = None
 
         # a3c
         self.num_workers = 1

@@ -14,7 +14,7 @@ def gen_dataset(argv):
     episode_count = 0
     
     if args.iter == 0:
-        train_iter = 40000 + 100
+        train_iter = 40000 + 1000
     else:
         train_iter = args.iter
 

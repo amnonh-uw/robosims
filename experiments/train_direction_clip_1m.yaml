@@ -1,0 +1,5 @@
+learning_rate: 1.e-5
+postfix=direction_clip_1m
+dataset=1m.pklz
+loss_clip_min=0.1
+loss_clip_max=1.

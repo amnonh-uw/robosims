@@ -1,0 +1,3 @@
+learning_rate: 1.e-5
+postfix=direction_1m
+dataset=1m.pklz
