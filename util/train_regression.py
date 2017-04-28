@@ -93,10 +93,11 @@ def train_regression(args, model_cls):
                 
                     check_grad(sess, grads_and_vars, feed_dict)
 
-                    _, l, pred_value_out = sess.run([
+                    _, l, pred_value_out, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
-                            model.true_tensor()], feed_dict=feed_dict)
+                            model.true_tensor(),
+                            model.summary_tensor()], feed_dict=feed_dict)
 
                 else:
                     feed_dict = {model.network.s_input:s_input,
@@ -105,11 +106,13 @@ def train_regression(args, model_cls):
 
                     check_grad(sess, grads_and_vars, feed_dict)
 
-                    _, loss, pred_value_out = sess.run([
+                    _, loss, pred_value_out, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
-                            model.pred_tensor()], feed_dict=feed_dict)
+                            model.pred_tensor(),
+                            model.summary_tensor()], feed_dict=feed_dict)
 
+                summary_writer.add_summary(summary, i)
                 losses.put(loss)
                 if num_losses <= 100:
                     num_losses += 1
@@ -118,13 +121,14 @@ def train_regression(args, model_cls):
 
                 m = np.mean(np.asarray(losses.queue))
 
-                print("{}: Loss={} avg_loss={}".format(episode_count, loss, m))
-
                 # Periodically save gifs of episodes, model parameters, and summary statistics.
                 if episode_count % 5 == 0 and episode_count != 0:
                     if episode_count % 25 == 0:
                         time_per_step = 0.05
                         make_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
+                        print("{}: Loss={} avg_loss={}".format(episode_count, loss, m))
+                        summary_writer.flush()
+
                     if episode_count % 250 == 0:
                         saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                         print("Saved Model")

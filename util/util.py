@@ -203,6 +203,11 @@ def sys_path_find(pathname, matchFunc=os.path.isfile):
 
     return None
 
+def variable_summaries(var):
+  """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+  with tf.name_scope('summaries'):
+    tf.summary.scalar(var.name, var)
+
 def PIL2array(img):
     return np.array(img.getdata(), np.uint8).reshape(img.size[1], img.size[0], 3)
 

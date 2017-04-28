@@ -23,6 +23,7 @@ class Direction_Model:
         self.max_loss = 0.5 * 3 * conf.max_distance_delta * conf.max_distance_delta
 
         if conf.loss_clip_min != None:
+            variable_summaries(self.l2_loss)
             clip_value_min = self.max_loss * conf.loss_clip_min
             clip_value_max = 9999999999
             print("max loss {} loss_clip_min {} loss_clip_max {}".format(self.max_loss, conf.loss_clip_min, conf.loss_clip_max))
@@ -31,6 +32,11 @@ class Direction_Model:
         else:
             self.loss = self.l2_loss
 
+        variable_summaries(self.loss)
+        self.summary = tf.summary.merge_all()
+
+    def summary_tensor(self):
+        return self.summary
 
     def pred_tensor(self):
         return self.pred_direction

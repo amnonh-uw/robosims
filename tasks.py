@@ -212,10 +212,16 @@ def test_direction(context, port=0, start_unity=True, config="learn_direction/te
     direction_network_train(args)
 
 @task
-def gen_datasets(context, port=0, start_unity=True):
+def gen_train_datasets(context, port=0, start_unity=True):
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm.yaml', '--dataset=/Volumes/Datasets/50cm.pklz' ])
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm.yaml', '--dataset=/Volumes/Datasets/20cm.pklz' ])
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m.yaml', '--dataset=/Volumes/Datasets/1m.pklz' ])
+
+@task
+def gen_test_datasets(context, port=0, start_unity=True):
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_50cm.yaml', '--dataset=test_50cm.pklz', '--test-only' ])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_20cm.yaml', '--dataset=test_20cm.pklz', '--test-only'])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_1m.yaml', '--dataset=test_1m.pklz', '--test-only'])
 
 @task
 def train_direction_1m(context, port=0, start_unity=True):

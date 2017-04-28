@@ -24,6 +24,7 @@ class Distance_Model:
         self.max_loss = max_distance * max_distance
 
         if conf.loss_clip_min != None:
+            variable_summaries(self.l2_loss)
             clip_value_min = self.max_loss * conf.loss_clip_min
             clip_value_max = 9999999999
             print("clipping between {} and {}".format(clip_value_min, clip_value_max))
@@ -31,7 +32,13 @@ class Distance_Model:
         else:
             self.loss = self.l2_loss
 
+        variable_summaries(self.loss)
+        self.summary = tf.summary.merge_all()
+
         print("max distance is {} chance loss is {}".format(max_distance, self.chance_loss()))
+
+    def summary_tensor(self):
+        return self.summary
 
     def pred_tensor(self):
         return self.pred_distance

@@ -101,6 +101,8 @@ class config(EasyDict):
         with open(file_name, 'r') as stream:
             y = yaml.safe_load(stream)
             for k, v in y.items():
+                if isinstance(self[k], float) and isinstance(v, int):
+                    v = float(v)
                 assert k in self, '{} is not a valid config parameter.'.format(k)
                 assert (type(v) == type(self[k])) or (self[k] == None), 'type of parameter {} is not matched: {} {}'.format(k, type(v), type(self[k]))
     
