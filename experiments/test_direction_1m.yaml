@@ -1,0 +1,4 @@
+learning_rate: 1.e-5
+postfix: direction_1m
+dataset: test_1m.pklz
+max_distance_delta: 1.

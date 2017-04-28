@@ -1,0 +1,6 @@
+learning_rate: 1.e-4
+postfix: distance_clip_1m
+dataset: test_1m.pklz
+max_distance_delta: 1.
+loss_clip_min: 0.1
+loss_clip_max: 1.
