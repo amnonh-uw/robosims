@@ -20,8 +20,8 @@ class Direction_Model:
         # Mean squared error
         self.direction = tf.placeholder(tf.float32, name='direction', shape=[None, 3])
         if conf.loss_clip_min != None:
-            clip_value_min = self.max_delta * conf.loss_clip_min
-            clip_value_max = self.max_delta * conf.loss_clip_max
+            clip_value_min = conf.loss_clip_min * self.direction
+            clip_value_max = conf.loss_clip_max * self.direction
             self.delta = tf.clip_by_value(tf.abs(self.pred_direction - self.direction), clip_value_min, clip_value_max, name='clipped_delta') - clip_value_min
             # delta is not a scalar
             # variable_summaries(self.delta)
