@@ -92,6 +92,10 @@ class UnityGame:
         self.extract_source_pose()
         return event
 
+    def take_prediction_step(self, x, y, z):
+        event = self.take_add_position_action(x, y, z)
+        self.s_frame = event.frame
+
     def take_add_position_action(self, x, y, z):
         action = ActionBuilder.addPosition(x, y, z)
         return self.step(action)
@@ -242,7 +246,6 @@ class UnityGame:
         if self.conf.probe_distance != 0:
             event = self.take_probe_action(0, 0, 1, self.conf.probe_distance)
             if self.collision:
-                print("proble collision")
                 return None
 
         return event

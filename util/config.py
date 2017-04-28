@@ -1,5 +1,6 @@
 import argparse
 import yaml
+import re
 from easydict import EasyDict
 
 def parse_args(argv):
@@ -26,6 +27,11 @@ def parse_args(argv):
     if args.dataset is None:
         args.dataset = args.conf.dataset
 
+    # if postfix is not set, create one if there is a config file
+    if args.conf.postfix == None and args.config != None:
+        args.conf.postfix = re.sub('^.*/', '', re.sub('\.yaml$', '', args.config))
+        print("defaulting to postfix {}".format(args.conf.postfix))
+
     print(args.conf)
 
     return args
@@ -34,6 +40,7 @@ class config(EasyDict):
     def __init__(self):
         self.postfix = None
         self.dataset = None
+        self.test_steps = 0
 
         # a3c
         self.num_workers = 1

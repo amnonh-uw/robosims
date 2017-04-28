@@ -1,4 +1,3 @@
-import tensorflow as tf
 import math
 import numpy as np
 import os
@@ -125,7 +124,7 @@ def train_regression(args, model_cls):
                 if episode_count % 5 == 0 and episode_count != 0:
                     if episode_count % 25 == 0:
                         time_per_step = 0.05
-                        make_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
+                        make_train_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
                         print("{}: Loss={} avg_loss={}".format(episode_count, loss, m))
                         summary_writer.flush()
 
@@ -153,11 +152,7 @@ def train_regression(args, model_cls):
         finally:
             env.close()
 
-
-def test(conf, sess, env, model, test_iter):
-    print("testing... {} iterations".format(test_iter))
-    for episode_count in range(0, test_iter):
-        env.new_episode()
+def predict(sess, env, model):
         t = env.get_state().target_buffer()
         s = env.get_state().source_buffer()
 
@@ -166,9 +161,48 @@ def test(conf, sess, env, model, test_iter):
 
         feed_dict = { model.network.s_input:s_input, model.network.t_input:t_input}
         pred_value_out = sess.run([model.pred_tensor()], feed_dict=feed_dict)
-        pred_value_out = pred_value_out[0]
+        return (pred_value_out[0])[0]
 
-        make_jpg(conf, "test_set_", env, model, pred_value_out, episode_count)
+def make_train_jpg(conf, prefix,  env, model, pred_value_out, episode_count, loss):
+    pred_value = pred_value_out[0]
+    t = env.get_state().target_buffer()
+    s = env.get_state().source_buffer()
+    images = [t, s]
+    err_str = model.error_str(env, pred_value)
+    cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
+    cap_texts2 = [ err_str, "loss{} ".format(loss) ]
+
+    make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count)
+
+def test(conf, sess, env, model, test_iter):
+    print("testing... {} iterations".format(test_iter))
+    for episode_count in range(0, test_iter):
+        env.new_episode()
+        pred_value = predict(sess, env, model)
+
+        t = env.get_state().target_buffer()
+        s = env.get_state().source_buffer()
+        images = [t, s]
+        err_str = model.error_str(env, pred_value)
+        cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
+        cap_texts2 = [ err_str, "" ]
+
+        if conf.test_steps == 0:
+            make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count)
+        else:
+            for step in range(conf.test_steps):
+                x = float(pred_value[0])
+                y = float(pred_value[1])
+                z = float(pred_value[2])
+                env.take_prediction_step(x, y,z)
+                image = env.get_state().source_buffer()
+                images.append(image)
+                pred_value = predict(sess, env, model)
+                err_str = model.error_str(env, pred_value)
+                cap_texts.append("step {}:{}".format(step+1, env.source_str()))
+                cap_texts2.append(err_str)
+
+            make_jpg(conf, "test_set_steps_", images, cap_texts, cap_texts2, episode_count)
 
 def process_frame(frame):
     need_shape = [1]

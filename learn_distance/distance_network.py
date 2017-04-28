@@ -70,7 +70,7 @@ class Distance_Model:
         delta = round(delta, 2)
         err_frac_string = str(delta) + "/" + str(true_distance)
 
-        return "error " + err_frac_string + " " + err_pct_string
+        return "pred error " + err_frac_string + " " + err_pct_string
 
     def name(self):
         return "distance"

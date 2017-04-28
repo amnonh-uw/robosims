@@ -1,7 +1,7 @@
 learning_rate: 1.e-5
-postfix: direction_clip_1m
-dataset: test_1m.pklz
+postfix: direction_clip40_1m
 max_distance_delta: 1.
 max_rotation_delta: 0
-loss_clip_min: 0.1
+loss_clip_min: 0.4
 loss_clip_max: 99.
+test_steps: 3

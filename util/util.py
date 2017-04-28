@@ -116,21 +116,12 @@ def make_image(images, cap_texts = None, cap_texts2=None):
 
     return stacked
 
-def make_jpg(conf, prefix, env, model, pred_value, episode_count, loss=None):
-    t = env.get_state().target_buffer()
-    im_t = Image.fromarray(t)
-    s = env.get_state().source_buffer()
-    im_s = Image.fromarray(s)
-    err_str = model.error_str(env, pred_value)
+def make_jpg(conf, prefix, array_images, cap_texts, cap_texts2, episode_count):
+    images = []
+    for im in array_images:
+        images.append(Image.fromarray(im))
 
-    if loss is None:
-        draw_text = err_str
-    else:
-        draw_text = "loss="+ str(loss) + " " + err_str
-
-    stacked = make_image((im_s, im_t),
-                         ("source " + draw_text, "dest"),
-                         (env.source_str(), env.target_str()))
+    stacked = make_image(images, cap_texts, cap_texts2)
     stacked.save(conf.frames_path + "/" +  prefix + str(episode_count)+'.jpg')
 
 def vstack_images(images):

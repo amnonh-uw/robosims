@@ -56,9 +56,9 @@ class Direction_Model:
 
     def error_str(self, env, pred_direction):
         if pred_direction.size != 3:
-            raise ValueError("accuracy excpects pred_value to be of size 1")
-        if isinstance(pred_direction, np.ndarray):
-            pred_direction = pred_direction[0, :]
+            raise ValueError("accuracy excpects pred_value to be of size 3")
+        # if isinstance(pred_direction, np.ndarray):
+        #    pred_direction = pred_direction[0, :]
 
         true_direction = env.direction()
         delta = true_direction - pred_direction
@@ -72,7 +72,7 @@ class Direction_Model:
             if i != 2:
                 s += ','
 
-        return "error " + s
+        return "pred error " + s
 
     def name(self):
         return "direction"
