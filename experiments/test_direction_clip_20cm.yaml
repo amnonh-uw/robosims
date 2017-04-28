@@ -3,4 +3,4 @@ postfix: direction_clip_20cm
 dataset: test_20cm.pklz
 max_distance_delta: 0.2
 loss_clip_min: 0.1
-loss_clip_max: 1.
+loss_clip_max: 99.

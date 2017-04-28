@@ -3,4 +3,4 @@ postfix: distance_clip_1m
 dataset: 1m.pklz
 max_distance_delta: 1.
 loss_clip_min: 0.1
-loss_clip_max: 1.
+loss_clip_max: 99.

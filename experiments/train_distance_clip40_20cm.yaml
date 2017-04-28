@@ -2,5 +2,5 @@ learning_rate: 1.e-4
 postfix: distance_clip_20cm
 dataset: 20cm.pklz
 max_distance_delta: 0.2
-loss_clip_min: 0.1
+loss_clip_min: 0.4
 loss_clip_max: 99.

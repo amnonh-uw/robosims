@@ -12,30 +12,28 @@ class Distance_Model:
         else:
             cheat_distance = None
 
+        self.max_delta = math.sqrt(3 * conf.max_distance_delta * conf.max_distance_delta)
+        self.mid_loss = 0.5 * self.max_delta * self.max_delta
+
         self.network = Distance_Network(conf, cls, "main", cheat_distance, trainable=trainable)
         self.pred_distance = self.network.get_output()
 
         # Mean squared error
         self.distance = tf.placeholder(tf.float32, name='distance', shape=[None, 1])
-        self.l2_loss = tf.nn.l2_loss(self.pred_distance - self.distance, name='loss')
-
-        max_distance = math.sqrt(3 * conf.max_distance_delta * conf.max_distance_delta)
-        self.mid_loss = 0.5 * max_distance * max_distance
-        self.max_loss = max_distance * max_distance
-
         if conf.loss_clip_min != None:
-            variable_summaries(self.l2_loss)
-            clip_value_min = self.max_loss * conf.loss_clip_min
-            clip_value_max = 9999999999
-            print("clipping between {} and {}".format(clip_value_min, clip_value_max))
-            self.loss = tf.clip_by_value(self.l2_loss, clip_value_min, clip_value_max, name='loss') - clip_value_min
+            clip_value_min = self.max_delta * conf.loss_clip_min
+            clip_value_max = self.max_delta * conf.loss_clip_max
+            self.delta = tf.clip_by_value(tf.abs(self.pred_distance - self.distance), clip_value_min, clip_value_max, name='clipped_delta') - clip_value_min
+            variable_summaries(self.delta)
         else:
-            self.loss = self.l2_loss
+            self.delta = self.pred_distance - self.distance
+
+        self.loss = tf.nn.l2_loss(self.delta, name='loss')
 
         variable_summaries(self.loss)
         self.summary = tf.summary.merge_all()
 
-        print("max distance is {} chance loss is {}".format(max_distance, self.chance_loss()))
+        print("max distance is {} chance loss is {}".format(self.max_delta, self.chance_loss()))
 
     def summary_tensor(self):
         return self.summary
@@ -51,9 +49,6 @@ class Distance_Model:
 
     def chance_loss(self):
         return self.mid_loss
-
-    def max_loss(self):
-        return self.max_loss
 
     def true_value(self, env):
         return(np.reshape(env.distance(), [1,1]))

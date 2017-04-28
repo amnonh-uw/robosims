@@ -14,23 +14,21 @@ class Direction_Model:
         self.network = Direction_Network(conf, cls, "main", cheat_direction, trainable=trainable)
         self.pred_direction = self.network.get_output()
 
+        self.mid_loss = 0.5 * 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
+        self.max_delta = conf.max_distance_delta
+
         # Mean squared error
         self.direction = tf.placeholder(tf.float32, name='direction', shape=[None, 3])
-        self.l2_loss = tf.nn.l2_loss(self.pred_direction - self.direction, name='l2_loss')
-        self.loss = tf.nn.l2_loss(self.pred_direction - self.direction, name='l2_loss')
-
-        self.mid_loss = 0.5 * 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
-        self.max_loss = 0.5 * 3 * conf.max_distance_delta * conf.max_distance_delta
-
         if conf.loss_clip_min != None:
-            variable_summaries(self.l2_loss)
-            clip_value_min = self.max_loss * conf.loss_clip_min
-            clip_value_max = 9999999999
-            print("max loss {} loss_clip_min {} loss_clip_max {}".format(self.max_loss, conf.loss_clip_min, conf.loss_clip_max))
-            print("clipping between {} and {}".format(clip_value_min, clip_value_max))
-            self.loss = tf.clip_by_value(self.l2_loss, clip_value_min, clip_value_max, name='loss') - clip_value_min
+            clip_value_min = self.max_delta * conf.loss_clip_min
+            clip_value_max = self.max_delta * conf.loss_clip_max
+            self.delta = tf.clip_by_value(tf.abs(self.pred_direction - self.direction), clip_value_min, clip_value_max, name='clipped_delta') - clip_value_min
+            # delta is not a scalar
+            # variable_summaries(self.delta)
         else:
-            self.loss = self.l2_loss
+            self.delta = self.pred_direction - self.direction
+
+        self.loss = tf.nn.l2_loss(self.delta, name='loss')
 
         variable_summaries(self.loss)
         self.summary = tf.summary.merge_all()
@@ -49,9 +47,6 @@ class Direction_Model:
 
     def chance_loss(self):
         return self.mid_loss
-
-    def max_loss(self):
-        return self.max_loss
 
     def true_value(self, env):
         return(np.reshape(env.direction(), [1,3]))
