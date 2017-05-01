@@ -12,7 +12,7 @@ class Direction_Model:
         else:
             self.cheat_direction = None
 
-        self.self.network = Direction_Network(conf, cls, "main", cheat_direction, trainable=trainable)
+        self.self.network = Direction_Network(conf, cls, "main", self.cheat_direction, trainable=trainable)
         self.pred_direction = self.network.get_output()
 
         self.mid_loss = 0.5 * 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
