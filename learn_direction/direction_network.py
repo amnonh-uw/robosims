@@ -11,6 +11,7 @@ class Direction_Model:
             cheat_direction = tf.placeholder(tf.float32, shape=[None, 3], name='cheat_direction')
         else:
             cheat_direction = None
+
         self.network = Direction_Network(conf, cls, "main", cheat_direction, trainable=trainable)
         self.pred_direction = self.network.get_output()
 
@@ -56,9 +57,7 @@ class Direction_Model:
 
     def error_str(self, env, pred_direction):
         if pred_direction.size != 3:
-            raise ValueError("accuracy excpects pred_value to be of size 3")
-        # if isinstance(pred_direction, np.ndarray):
-        #    pred_direction = pred_direction[0, :]
+            raise ValueError("error_str excpects pred_value to be of size 3")
 
         true_direction = env.direction()
         delta = true_direction - pred_direction
@@ -102,11 +101,6 @@ class Direction_Network():
                 # combined = tf.concat(values=[cheat], axis=1)
             else:
                 combined = tf.concat(values=[self.t_out, self.s_out], axis=1)
-
-            # self.s_conv_layers = self.flatten(self.source_net.conv_layers())
-            # self.t_conv_layers = self.flatten(self.target_net.conv_layers())
-
-            # combined = tf.concat(values=[self.t_conv_layers, self.s_conv_layers], axis=1)
 
             hidden = slim.fully_connected(combined, 1024, activation_fn=tf.nn.elu,
                 weights_initializer=normalized_columns_initializer(1.0),

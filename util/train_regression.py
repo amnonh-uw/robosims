@@ -18,7 +18,7 @@ def train_regression(args, model_cls):
         print("can't find data file for class {}".format(conf.base_class))
         exit()
 
-    cheat = False
+    cheat = conf.cheat
     model = model_cls(conf, cls, cheat=cheat, trainable=True)
     make_dirs(model.name(), args)
 

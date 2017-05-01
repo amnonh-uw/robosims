@@ -41,6 +41,7 @@ class config(EasyDict):
         self.postfix = None
         self.dataset = None
         self.test_steps = 0
+        self.cheat = False
 
         # a3c
         self.num_workers = 1
