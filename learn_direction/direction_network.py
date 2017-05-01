@@ -8,11 +8,11 @@ from util.util import *
 class Direction_Model:
     def __init__(self, conf, cls, cheat=False, trainable=False):
         if cheat:
-            cheat_direction = tf.placeholder(tf.float32, shape=[None, 3], name='cheat_direction')
+            self.cheat_direction = tf.placeholder(tf.float32, shape=[None, 3], name='cheat_direction')
         else:
-            cheat_direction = None
+            self.cheat_direction = None
 
-        self.network = Direction_Network(conf, cls, "main", cheat_direction, trainable=trainable)
+        self.self.network = Direction_Network(conf, cls, "main", cheat_direction, trainable=trainable)
         self.pred_direction = self.network.get_output()
 
         self.mid_loss = 0.5 * 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
@@ -54,6 +54,9 @@ class Direction_Model:
 
     def cheat_value(self, env):
         return 2 * self.true_value(env)
+
+    def cheat_tensor(self):
+        return self.cheat_direction
 
     def error_str(self, env, pred_direction):
         if pred_direction.size != 3:
