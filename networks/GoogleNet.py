@@ -183,22 +183,9 @@ class GoogleNet(Network):
                    'inception_5b_5x5', 
                    'inception_5b_pool_proj')
              .concat(3, name='inception_5b_output')
-             .avg_pool(7, 7, 1, 1, padding='VALID', name='pool5_7x7_s1'))
-             # .fc(1000, relu=False, name='loss3_classifier')
+             .avg_pool(7, 7, 1, 1, padding='VALID', name='pool5_7x7_s1')
+             .fc(1000, relu=False, name='loss3_classifier'))
              # .softmax(name='prob'))
 
     def weights_file_name(self):
         return 'googlenet.npy' 
-
-    def pool_layers(self):
-        return [
-                # self.layers['inception_3a_pool'],
-                # self.layers['inception_3b_pool'],
-                # self.layers['inception_4a_pool'],
-                # self.layers['inception_4b_pool'],
-                # self.layers['inception_4c_pool'],
-                # self.layers['inception_4d_pool'],
-                # self.layers['inception_4e_pool'],
-                # self.layers['inception_5a_pool'],
-                self.layers['inception_5b_pool'],
-                self.layers['pool5_7x7_s1']]

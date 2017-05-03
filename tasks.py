@@ -14,7 +14,7 @@ import tempfile
 import re
 from a3c.train import train as a3c_train
 from learn_distance.train import train as distance_network_train
-from learn_direction.train import train as direction_network_train
+from learn_translation.train import train as translation_network_train
 from gen_dataset.gen_dataset import gen_dataset
 from util.bfs import run_bfs
 
@@ -180,7 +180,7 @@ def bfs(context, port=0, start_unity=True):
 @task
 def train_a3c(context, port=0, start_unity=True):
     sys.path.append("./networks")
-    a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml', '--partial-load-model=model_direction/model-1500.cptk' ])
+    a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml', '--partial-load-model=model_translation/model-1500.cptk' ])
 
 @task
 def train_distance(context, port=0, start_unity=True, config="learn_distance/train.yaml"):
@@ -198,18 +198,18 @@ def test_distance(context, port=0, start_unity=True, config="learn_distance/test
     distance_network_train(args)
 
 @task
-def train_direction(context, port=0, start_unity=True, config="learn_direction/train.yaml"):
+def train_translation(context, port=0, start_unity=True, config="learn_translation/train.yaml"):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
     args.append("--config=" + config)
-    direction_network_train(args)
+    translation_network_train(args)
 
 @task
-def test_direction(context, port=0, start_unity=True, config="learn_direction/test.html"):
+def test_translation(context, port=0, start_unity=True, config="learn_translation/test.html"):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
     args.append("--config=" + config)
-    direction_network_train(args)
+    translation_network_train(args)
 
 @task
 def gen_train_datasets(context, port=0, start_unity=True):

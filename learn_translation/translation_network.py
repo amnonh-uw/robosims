@@ -7,29 +7,29 @@ from util.util import *
 from scipy.spatial.distance import euclidean
 from numpy.linalg import norm
 
-class Direction_Model:
+class Translation_Model:
     def __init__(self, conf, cls, cheat=False, trainable=False):
         if cheat:
-            self.cheat_direction = tf.placeholder(tf.float32, shape=[None, 3], name='cheat_direction')
+            self.cheat_translation = tf.placeholder(tf.float32, shape=[None, 3], name='cheat_translation')
         else:
-            self.cheat_direction = None
+            self.cheat_translation = None
 
-        self.network = Direction_Network(conf, cls, "main", self.cheat_direction, trainable=trainable)
-        self.pred_direction = self.network.get_output()
+        self.network = Translation_Network(conf, cls, "main", self.cheat_translation, trainable=trainable)
+        self.pred_translation = self.network.get_output()
 
         self.mid_loss = 0.5 * 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
         self.max_delta = conf.max_distance_delta
 
         # Mean squared error
-        self.direction = tf.placeholder(tf.float32, name='direction', shape=[None, 3])
+        self.translation = tf.placeholder(tf.float32, name='translation', shape=[None, 3])
         if conf.loss_clip_min != None:
-            clip_value_min = conf.loss_clip_min * self.direction
-            clip_value_max = conf.loss_clip_max * self.direction
-            self.delta = tf.clip_by_value(tf.abs(self.pred_direction - self.direction), clip_value_min, clip_value_max, name='clipped_delta') - clip_value_min
+            clip_value_min = conf.loss_clip_min * self.translation
+            clip_value_max = conf.loss_clip_max * self.translation
+            self.delta = tf.clip_by_value(tf.abs(self.pred_translation - self.translation), clip_value_min, clip_value_max, name='clipped_delta') - clip_value_min
             # delta is not a scalar
             # variable_summaries(self.delta)
         else:
-            self.delta = self.pred_direction - self.direction
+            self.delta = self.pred_translation - self.translation
 
         self.loss = tf.nn.l2_loss(self.delta, name='loss')
 
@@ -40,10 +40,10 @@ class Direction_Model:
         return self.summary
 
     def pred_tensor(self):
-        return self.pred_direction
+        return self.pred_translation
 
     def true_tensor(self):
-        return(self.direction)
+        return(self.translation)
 
     def loss_tensor(self):
         return(self.loss)
@@ -52,53 +52,53 @@ class Direction_Model:
         return self.mid_loss
 
     def true_value(self, env):
-        return(np.reshape(env.direction(), [1,3]))
+        return(np.reshape(env.translation(), [1,3]))
 
     def cheat_value(self, env):
         return 2 * self.true_value(env)
 
     def cheat_tensor(self):
-        return self.cheat_direction
+        return self.cheat_translation
 
-    def accuracy(self, env, pred_direction):
-        if pred_direction.size != 3:
-            pred_direction = pred_direction[0]
-            if pred_direction.size != 3:
-                pred_direction = pred_direction[0]
-                if pred_direction.size != 3:
+    def accuracy(self, env, pred_translation):
+        if pred_translation.size != 3:
+            pred_translation = pred_translation[0]
+            if pred_translation.size != 3:
+                pred_translation = pred_translation[0]
+                if pred_translation.size != 3:
                     raise ValueError("error_str excpects pred_value to be of size 3")
 
-        true_direction = env.direction()
-        delta = true_direction - pred_direction
+        true_translation = env.translation()
+        delta = true_translation - pred_translation
 
         return np.amax(np.absolute(delta))
 
-    def error_str(self, env, pred_direction):
-        if pred_direction.size != 3:
-            pred_direction = pred_direction[0]
-            if pred_direction.size != 3:
-                pred_direction = pred_direction[0]
-                if pred_direction.size != 3:
+    def error_str(self, env, pred_translation):
+        if pred_translation.size != 3:
+            pred_translation = pred_translation[0]
+            if pred_translation.size != 3:
+                pred_translation = pred_translation[0]
+                if pred_translation.size != 3:
                     raise ValueError("error_str excpects pred_value to be of size 3")
 
-        true_direction = env.direction()
-        delta = true_direction - pred_direction
+        true_translation = env.translation()
+        delta = true_translation - pred_translation
 
         s = ""
         for i in range(0,3):
-            if abs(true_direction[i]) < 0.01:
-                s += str(round(delta[i], 2)) + "/" + str(round(true_direction[i], 2))
+            if abs(true_translation[i]) < 0.01:
+                s += str(round(delta[i], 2)) + "/" + str(round(true_translation[i], 2))
             else:
-                s += str(round(delta[i]/true_direction[i], 2) *100) + "%"
+                s += str(round(delta[i]/true_translation[i], 2) *100) + "%"
             if i != 2:
                 s += ','
 
         return "pred error " + s
 
     def name(self):
-        return "direction"
+        return "translation"
 
-class Direction_Network():
+class Translation_Network():
     def __init__(self, conf, cls, scope, cheat = None, trainable=False):
         self.scope = scope
 
@@ -118,7 +118,7 @@ class Direction_Network():
             self.t_out = flatten(self.target_net.get_output())
               
             if cheat is not None:
-                print("Direction network cheating....")
+                print("Translation network cheating....")
                 combined = tf.concat(values=[self.t_out, self.s_out, cheat], axis=1)
                 # combined = tf.concat(values=[cheat], axis=1)
             else:
@@ -128,14 +128,14 @@ class Direction_Network():
                 weights_initializer=normalized_columns_initializer(1.0),
                 biases_initializer=None, scope='hidden_vector')
 
-            self.direction_pred = slim.fully_connected(hidden,3,
+            self.translation_pred = slim.fully_connected(hidden,3,
                 activation_fn=None,
                 weights_initializer=normalized_columns_initializer(1.0),
-                biases_initializer=None, scope='direction_pred')
+                biases_initializer=None, scope='translation_pred')
 
             
     def get_output(self):
-        return(self.direction_pred)
+        return(self.translation_pred)
 
     def load(self, data_path, session, ignore_missing=False):
         with tf.variable_scope(self.scope):

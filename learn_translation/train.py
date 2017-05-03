@@ -1,4 +1,4 @@
-from learn_direction.direction_network import *
+from learn_translation.translation_network import *
 from util.train_regression import *
 from util.config import *
 

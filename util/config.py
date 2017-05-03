@@ -90,8 +90,8 @@ class config(EasyDict):
 
         # gif
         self.gif_fps = 20
-        self.base_class = 'GoogleNet'
-        self.load_base_weights = True
+        self.base_class = 'ResNet50'
+        self.load_base_weights = False
         # self.load_base_weights = False
 
         # loss
