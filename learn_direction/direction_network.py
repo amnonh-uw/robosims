@@ -4,6 +4,8 @@ import numpy as np
 import math
 from robosims.unity import UnityGame
 from util.util import *
+from scipy.spatial.distance import euclidean
+from numpy.linalg import norm
 
 class Direction_Model:
     def __init__(self, conf, cls, cheat=False, trainable=False):
@@ -12,7 +14,7 @@ class Direction_Model:
         else:
             self.cheat_direction = None
 
-        .self.network = Direction_Network(conf, cls, "main", self.cheat_direction, trainable=trainable)
+        self.network = Direction_Network(conf, cls, "main", self.cheat_direction, trainable=trainable)
         self.pred_direction = self.network.get_output()
 
         self.mid_loss = 0.5 * 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
@@ -58,9 +60,26 @@ class Direction_Model:
     def cheat_tensor(self):
         return self.cheat_direction
 
+    def accuracy(self, env, pred_direction):
+        if pred_direction.size != 3:
+            pred_direction = pred_direction[0]
+            if pred_direction.size != 3:
+                pred_direction = pred_direction[0]
+                if pred_direction.size != 3:
+                    raise ValueError("error_str excpects pred_value to be of size 3")
+
+        true_direction = env.direction()
+        delta = true_direction - pred_direction
+
+        return np.amax(np.absolute(delta))
+
     def error_str(self, env, pred_direction):
         if pred_direction.size != 3:
-            raise ValueError("error_str excpects pred_value to be of size 3")
+            pred_direction = pred_direction[0]
+            if pred_direction.size != 3:
+                pred_direction = pred_direction[0]
+                if pred_direction.size != 3:
+                    raise ValueError("error_str excpects pred_value to be of size 3")
 
         true_direction = env.direction()
         delta = true_direction - pred_direction
@@ -89,10 +108,10 @@ class Direction_Network():
             self.s_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="s_input")
             self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
 
-            with tf.variable_scope("source"):
+            with tf.variable_scope("siamese_network"):
                 self.source_net = cls({'data': self.s_input}, trainable=trainable)
 
-            with tf.variable_scope("target"):
+            with tf.variable_scope("siamese_network", reuse=True):
                 self.target_net = cls({'data': self.t_input}, trainable=trainable)
 
             self.s_out = flatten(self.source_net.get_output())
@@ -120,7 +139,5 @@ class Direction_Network():
 
     def load(self, data_path, session, ignore_missing=False):
         with tf.variable_scope(self.scope):
-            with tf.variable_scope("source"):
+            with tf.variable_scope("siamese_network"):
                 self.source_net.load(data_path, session, ignore_missing)
-            with tf.variable_scope("target"):
-                self.target_net.load(data_path, session, ignore_missing)

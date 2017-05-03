@@ -7,6 +7,7 @@ import importlib
 import signal
 from robosims.unity import UnityGame
 from util.util import *
+from util.laplotter import *
 from PIL import Image, ImageDraw, ImageFont
 
 def train_regression(args, model_cls):
@@ -34,6 +35,8 @@ def train_regression(args, model_cls):
 
     saver = tf.train.Saver(max_to_keep=5)
 
+    plotter = LossAccPlotter(save_to_filepath=conf.frames_path + "/chart.png")
+
     with tf.Session() as sess:
         # Instantiate a SummaryWriter to output summaries and the Graph.
         summary_writer = tf.summary.FileWriter(conf.log_path, sess.graph)
@@ -55,7 +58,6 @@ def train_regression(args, model_cls):
             episode_count = 0
             losses = queue.Queue()
             num_losses = 0
-            mean_loss = 999999.
     
             if args.test_only:
                 if args.iter == 0:
@@ -120,6 +122,15 @@ def train_regression(args, model_cls):
 
                 m = np.mean(np.asarray(losses.queue))
 
+                acc_train = model.accuracy(env, pred_value_out)
+                loss_train = loss
+                if abs(acc_train) > 2:
+                    acc_train = None
+                if abs(loss_train) > 2:
+                    loss_train = None
+
+                plotter.add_values(episode_count, loss_train=loss_train, acc_train=acc_train, redraw=False)
+
                 # Periodically save gifs of episodes, model parameters, and summary statistics.
                 if episode_count % 5 == 0 and episode_count != 0:
                     if episode_count % 25 == 0:
@@ -127,20 +138,11 @@ def train_regression(args, model_cls):
                         make_train_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
                         print("{}: Loss={} avg_loss={}".format(episode_count, loss, m))
                         summary_writer.flush()
+                        plotter.redraw()
 
                     if episode_count % 250 == 0:
                         saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                         print("Saved Model")
-
-                if episode_count % 200 == 0:
-                    print("loss running average {} vs chance loss {}".format(m, model.chance_loss()))
-                    print("loss histogram")
-                    ascii_hist(np.asarray(losses.queue), bins=50)
-                    if m >= mean_loss:
-                        print("mean loss stable at {}".format(m))
-                        # break
-                    else:
-                        mean_loss = m
 
             test(conf, sess, env, model, args.test_iter)
 
@@ -151,6 +153,8 @@ def train_regression(args, model_cls):
             print("end of pickled file reached")
         finally:
             env.close()
+
+    plotter.redraw()
 
 def predict(sess, env, model):
         t = env.get_state().target_buffer()
@@ -172,7 +176,7 @@ def make_train_jpg(conf, prefix,  env, model, pred_value_out, episode_count, los
     cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
     cap_texts2 = [ err_str, "loss{} ".format(loss) ]
 
-    make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count)
+    make_jpg(conf, prefix, images, cap_texts, cap_texts2,  episode_count)
 
 def test(conf, sess, env, model, test_iter):
     print("testing... {} iterations".format(test_iter))

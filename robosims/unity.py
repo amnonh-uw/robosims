@@ -307,6 +307,8 @@ class UnityGame:
         y = self.uniform_delta(self.conf.max_distance_delta, self.s_y, self.min_y, self.max_y, self.conf.grid_distance)
         z = self.uniform_delta(self.conf.max_distance_delta, self.s_z, self.min_z, self.max_z, self.conf.grid_distance)
         r = self.uniform_delta(self.conf.max_rotation_delta, self.s_r, self.min_r, self.max_r, self.conf.grid_rotation)
+        y = self.s_y
+        z = self.s_z
 
         return (x, y, z, r)
 

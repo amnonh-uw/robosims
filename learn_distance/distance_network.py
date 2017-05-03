@@ -56,11 +56,26 @@ class Distance_Model:
     def cheat_value(self, env):
         return 2 * self.true_value(env)
 
+    def accuracy(self, env, pred_distance):
+        if pred_distance.size != 1:
+            raise ValueError("accuracy excpects pred_value to be of size 1")
+        if isinstance(pred_distance, np.ndarray):
+            pred_distance = pred_distance[0]
+            if isinstance(pred_distance, np.ndarray):
+                pred_distance = pred_distance[0]
+
+        true_distance = env.distance()
+        delta = abs(true_distance - pred_distance)
+
+        return 1. - delta/true_distance
+
     def error_str(self, env, pred_distance):
         if pred_distance.size != 1:
             raise ValueError("accuracy excpects pred_value to be of size 1")
         if isinstance(pred_distance, np.ndarray):
-            pred_distance = pred_distance[0,0]
+            pred_distance = pred_distance[0]
+            if isinstance(pred_distance, np.ndarray):
+                pred_distance = pred_distance[0]
 
         true_distance = env.distance()
         delta = true_distance - pred_distance
@@ -85,10 +100,10 @@ class Distance_Network:
             self.s_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="s_input")
             self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
 
-            with tf.variable_scope("source"):
+            with tf.variable_scope("siamese_network"):
                 self.source_net = cls({'data': self.s_input}, trainable=trainable)
 
-            with tf.variable_scope("target"):
+            with tf.variable_scope("siamese_network", reuse=True):
                 self.target_net = cls({'data': self.t_input}, trainable=trainable)
 
             self.s_out = flatten(self.source_net.get_output())
@@ -114,7 +129,5 @@ class Distance_Network:
 
     def load(self, data_path, session, ignore_missing=False):
         with tf.variable_scope(self.scope):
-            with tf.variable_scope("source"):
+            with tf.variable_scope("siamese_network"):
                 self.source_net.load(data_path, session, ignore_missing)
-            with tf.variable_scope("target"):
-                self.target_net.load(data_path, session, ignore_missing)
