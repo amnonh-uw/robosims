@@ -201,3 +201,6 @@ class ResNet50(Network):
              .avg_pool(7, 7, 1, 1, padding='VALID', name='pool5')
              .fc(1000, relu=False, name='fc1000'))
        #      .softmax(name='prob'))
+
+    def single_image():
+        returne True

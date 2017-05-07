@@ -15,6 +15,7 @@ import re
 from a3c.train import train as a3c_train
 from learn_distance.train import train as distance_network_train
 from learn_translation.train import train as translation_network_train
+from learn_class.train import train as class_network_train
 from gen_dataset.gen_dataset import gen_dataset
 from util.bfs import run_bfs
 
@@ -210,6 +211,21 @@ def test_translation(context, port=0, start_unity=True, config="learn_translatio
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
     args.append("--config=" + config)
     translation_network_train(args)
+
+@task
+def train_class(context, port=0, start_unity=True, config="learn_distance/train.yaml"):
+    sys.path.append("./networks")
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
+    args.append("--config=" + config)
+    print(args)
+    class_network_train(args)
+
+@task
+def test_class(context, port=0, start_unity=True, config="learn_distance/test.yaml"):
+    sys.path.append("./networks")
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
+    args.append("--config=" + config)
+    class_network_train(args)
 
 @task
 def gen_train_datasets(context, port=0, start_unity=True):

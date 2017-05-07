@@ -42,6 +42,7 @@ class config(EasyDict):
         self.dataset = None
         self.test_steps = 0
         self.cheat = False
+        self.check_gradients = True
 
         # a3c
         self.num_workers = 1

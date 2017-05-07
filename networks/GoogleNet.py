@@ -187,5 +187,8 @@ class GoogleNet(Network):
              .fc(1000, relu=False, name='loss3_classifier'))
              # .softmax(name='prob'))
 
+    def single_image():
+        returne True
+
     def weights_file_name(self):
         return 'googlenet.npy' 

@@ -106,10 +106,10 @@ class Distance_Network:
             with tf.variable_scope("siamese_network", reuse=True):
                 self.target_net = cls({'data': self.t_input}, trainable=trainable)
 
-            # self.s_out = flatten(self.source_net.get_output())
-            # self.t_out = flatten(self.target_net.get_output())
-            self.s_out = self.source_net.get_output()
-            self.t_out = self.target_net.get_output()
+            self.s_out = flatten(self.source_net.get_output())
+            self.t_out = flatten(self.target_net.get_output())
+            # self.s_out = self.source_net.get_output()
+            # self.t_out = self.target_net.get_output()
               
             if cheat is not None:
                 print("Distance network cheating....")

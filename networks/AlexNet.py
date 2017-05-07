@@ -18,12 +18,9 @@ class AlexNet(Network):
              # .fc(1000, relu=False, name='fc8')
              # .softmax(name='prob'))
 
-def weights_file_name(self):
+
+    def single_image():
+        returne True
+
+    def weights_file_name(self):
         return 'AlexNet.npy'
-
-    def conv_layers(self):
-        return [
-                self.layers['pool1'],
-                self.layers['pool2'],
-                self.layers['pool5']]
-

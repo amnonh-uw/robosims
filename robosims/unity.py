@@ -45,6 +45,14 @@ class UnityGame:
     def translation(self):
         delta = np.asarray(self.t_pos) - np.asarray(self.s_pos)
         return delta
+
+    def get_class(self):
+        delta = self.translation()
+        cls = np.argmax(delta)
+        if delta[cls] < 0:
+            cls += 3
+
+        return cls
         
     def one_close_enough(self, a, b, dist):
         return abs(a-b) < dist

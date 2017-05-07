@@ -66,12 +66,13 @@ class Translation_Model:
             if pred_translation.size != 3:
                 pred_translation = pred_translation[0]
                 if pred_translation.size != 3:
-                    raise ValueError("error_str excpects pred_value to be of size 3")
+                    raise ValueError("accuracy excpects pred_value to be of size 3")
 
         true_translation = env.translation()
         delta = true_translation - pred_translation
 
-        return np.amax(np.absolute(delta))
+        max_index = np.amax(np.absolute(delta))
+        return(1 - delta[max_index] / true_translation[i])
 
     def error_str(self, env, pred_translation):
         if pred_translation.size != 3:
@@ -89,7 +90,7 @@ class Translation_Model:
             if abs(true_translation[i]) < 0.01:
                 s += str(round(delta[i], 2)) + "/" + str(round(true_translation[i], 2))
             else:
-                s += str(round(delta[i]/true_translation[i], 2) *100) + "%"
+                s += str(abs(round(delta[i]/true_translation[i], 2)) *100) + "%"
             if i != 2:
                 s += ','
 
@@ -108,30 +109,33 @@ class Translation_Network():
             self.s_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="s_input")
             self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
 
-            with tf.variable_scope("siamese_network"):
-                self.source_net = cls({'data': self.s_input}, trainable=trainable)
+            if cls.single_image():
+                with tf.variable_scope("siamese_network"):
+                    self.source_net = cls({'data': self.s_input}, trainable=trainable)
 
-            with tf.variable_scope("siamese_network", reuse=True):
-                self.target_net = cls({'data': self.t_input}, trainable=trainable)
+                with tf.variable_scope("siamese_network", reuse=True):
+                    self.target_net = cls({'data': self.t_input}, trainable=trainable)
 
-            self.s_out = flatten(self.source_net.get_output())
-            self.t_out = flatten(self.target_net.get_output())
+                self.s_out = flatten(self.source_net.get_output())
+                self.t_out = flatten(self.target_net.get_output())
               
-            if cheat is not None:
-                print("Translation network cheating....")
-                combined = tf.concat(values=[self.t_out, self.s_out, cheat], axis=1)
-                # combined = tf.concat(values=[cheat], axis=1)
+                if cheat is not None:
+                    print("Translation network cheating....")
+                    combined = tf.concat(values=[self.t_out, self.s_out, cheat], axis=1)
+                else:
+                     combined = tf.concat(values=[self.t_out, self.s_out], axis=1)
+
+                hidden = slim.fully_connected(combined, 1024, activation_fn=tf.nn.elu,
+                    weights_initializer=normalized_columns_initializer(1.0),
+                    biases_initializer=None, scope='hidden_vector')
+
+                self.translation_pred = slim.fully_connected(hidden,3,
+                    activation_fn=None,
+                    weights_initializer=normalized_columns_initializer(1.0),
+                    biases_initializer=None, scope='translation_pred')
             else:
-                combined = tf.concat(values=[self.t_out, self.s_out], axis=1)
-
-            hidden = slim.fully_connected(combined, 1024, activation_fn=tf.nn.elu,
-                weights_initializer=normalized_columns_initializer(1.0),
-                biases_initializer=None, scope='hidden_vector')
-
-            self.translation_pred = slim.fully_connected(hidden,3,
-                activation_fn=None,
-                weights_initializer=normalized_columns_initializer(1.0),
-                biases_initializer=None, scope='translation_pred')
+                self.net = cls({'image_data': self.s_input, 'image_data_pert' : self.t_input}, trainable=trainable)
+                self.translation_pred = self.net.position_tensor()
 
             
     def get_output(self):

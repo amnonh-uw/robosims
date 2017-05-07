@@ -14,10 +14,11 @@ def train_regression(args, model_cls):
     conf = args.conf
     mod = importlib.import_module(conf.base_class)
     cls = getattr(mod, conf.base_class)
-    cls_data = sys_path_find(conf.base_class + ".npy")
-    if cls_data == None:
-        print("can't find data file for class {}".format(conf.base_class))
-        exit()
+    if conf.load_base_weights:
+        cls_data = sys_path_find(conf.base_class + ".npy")
+        if cls_data == None:
+            print("can't find data file for class {}".format(conf.base_class))
+            exit()
 
     cheat = conf.cheat
     model = model_cls(conf, cls, cheat=cheat, trainable=True)
@@ -92,12 +93,13 @@ def train_regression(args, model_cls):
                              model.cheat_tensor():model.cheat_value(env),
                              model.true_tensor():model.true_value(env)}
                 
-                    check_grad(sess, grads_and_vars, feed_dict)
+                    if conf.check_gradients:
+                        check_grad(sess, grads_and_vars, feed_dict)
 
-                    _, l, pred_value_out, summary = sess.run([
+                    _, loss, pred_value_out, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
-                            model.true_tensor(),
+                            model.pred_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
                 else:
@@ -113,6 +115,9 @@ def train_regression(args, model_cls):
                             model.pred_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
+                print("pred_value_out is {}".format(pred_value_out))
+                print("loss is {}".format(loss))
+                loss = np.asscalar(loss)
                 summary_writer.add_summary(summary, i)
                 losses.put(loss)
                 if num_losses <= 100:
@@ -212,16 +217,6 @@ def process_frame(frame):
     need_shape = [1]
     need_shape += frame.shape
     return np.reshape(frame.astype(float)/ 255.0, need_shape)
-
-def ascii_hist(x, bins):
-    N,X = np.histogram(x, bins=bins)
-    width = 50
-    nmax = N.max()
-
-    for (xi, n) in zip(X,N):
-        bar = '#'*int(n*1.0*width/nmax)
-        xi = '{0: <8.4g}'.format(xi).ljust(10)
-        print('{0}| {1}'.format(xi,bar))
 
 def check_grad(sess, grads_and_vars, feed_dict):
     for gv in grads_and_vars:

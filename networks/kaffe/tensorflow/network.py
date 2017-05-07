@@ -164,6 +164,21 @@ class Network(object):
         return tf.nn.relu(input, name=name)
 
     @layer
+    def prelu(self, input, name):
+        with tf.variable_scope(name):
+            # input = tf.Print(input, [input], "prelu input " + name)
+            i = input.get_shape().as_list()
+            i = i[1:]
+            init = np.zeros(i, dtype=np.float32)
+            init.fill(0.25)
+            alphas = tf.get_variable('alpha', dtype=tf.float32, trainable=self.trainable, initializer=tf.constant(init))
+            # alphas = tf.Print(alphas, [alphas], "prelu alphas " + name)
+
+            output = tf.nn.relu(input) + alphas * (input - tf.abs(input)) * 0.5
+
+        return output
+
+    @layer
     def max_pool(self, input, k_h, k_w, s_h, s_w, name, padding=DEFAULT_PADDING):
         self.validate_padding(padding)
         return tf.nn.max_pool(input,
@@ -238,6 +253,7 @@ class Network(object):
             if scale_offset:
                 scale = self.make_var('scale', shape=shape)
                 offset = self.make_var('offset', shape=shape)
+                # offet = tf.Print(offset, [scale, offset], "batch normalization scale and offset " + name)
             else:
                 scale, offset = (None, None)
             output = tf.nn.batch_normalization(

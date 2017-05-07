@@ -209,3 +209,5 @@ class GoogLeNet(Network):
         (self.feed('cls3_fc1_pose')
              .fc(4, relu=False, name='cls3_fc_pose_wpqr'))
 
+    def single_image():
+        returne True
