@@ -169,8 +169,9 @@ def flatten(t, max_size=0):
             dim *= d
         print("flattening " + t.name + " size " + str(dim))
         t = tf.reshape(t, [-1, dim])
-    elif input_shape.ndims == 1:
+    elif input_shape.ndims == 1 or input_shape.ndims == 2:
         dim = input_shape[1]
+        print(dim)
     else:
         raise ValueError("invalid number of dimensions " + str(input_shape.ndims))
 
