@@ -54,7 +54,6 @@ def train_regression(args, model_cls):
                 model.network.load(cls_data, sess, ignore_missing=True)
                 print("network load complete")
         
-        env = UnityGame(args)
         try:
             episode_count = 0
             losses = queue.Queue()
@@ -66,89 +65,99 @@ def train_regression(args, model_cls):
                 else:
                     args.test_iter = args.iter
                 train_iter = 0
+                train_outer_iter = 0
             else:
                 if args.iter == 0:
                     train_iter = 40000
                 else:
                     train_iter = args.iter
+                if args.outer_iter == 0:
+                    train_outer_iter = 1
+                else:
+                    train_outer_iter = args.outer_iter
                 args.test_iter = 100
         
-            print("doing {} training iterations".format(train_iter))
-            for i in range(0, train_iter):
-                env.new_episode()
-                episode_count += 1
-                t = env.get_state().target_buffer()
-                s = env.get_state().source_buffer()
+            print("doing {}*{} training iterations".format(train_iter, train_outer_iter))
+            for i in range(0, train_outer_iter):
+                env = UnityGame(args)
+                for i in range(0, train_iter):
+                    env.new_episode()
+                    episode_count += 1
+                    t = env.get_state().target_buffer()
+                    s = env.get_state().source_buffer()
 
-                t_input = process_frame(t)
-                s_input = process_frame(s)
+                    t_input = process_frame(t)
+                    s_input = process_frame(s)
 
-                if cheat:
-                    s_input = np.zeros(s_input.shape)
-                    t_input = np.zeros(s_input.shape)
+                    if cheat:
+                        s_input = np.zeros(s_input.shape)
+                        t_input = np.zeros(s_input.shape)
 
-                    feed_dict = {
+                        feed_dict = {
                              model.network.s_input:s_input,
                              model.network.t_input:t_input,
                              model.cheat_tensor():model.cheat_value(env),
                              model.true_tensor():model.true_value(env)}
                 
-                    if conf.check_gradients:
-                        check_grad(sess, grads_and_vars, feed_dict)
+                        if conf.check_gradients:
+                            check_grad(sess, grads_and_vars, feed_dict)
 
-                    _, loss, pred_value_out, summary = sess.run([
+                        _, loss, pred_value_out, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
                             model.pred_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
-                else:
-                    feed_dict = {model.network.s_input:s_input,
-                                 model.network.t_input:t_input,
-                                 model.true_tensor():model.true_value(env)}
+                    else:
+                        feed_dict = {
+                            model.network.s_input:s_input,
+                            model.network.t_input:t_input,
+                            model.true_tensor():model.true_value(env)}
 
-                    check_grad(sess, grads_and_vars, feed_dict)
+                        if conf.check_gradients:
+                            check_grad(sess, grads_and_vars, feed_dict)
 
-                    _, loss, pred_value_out, summary = sess.run([
+                        _, loss, pred_value_out, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
                             model.pred_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
-                print("pred_value_out is {}".format(pred_value_out))
-                print("loss is {}".format(loss))
-                loss = np.asscalar(loss)
-                summary_writer.add_summary(summary, i)
-                losses.put(loss)
-                if num_losses <= 100:
-                    num_losses += 1
-                else:
-                    losses.get()
+                    print("pred_value_out is {}".format(pred_value_out))
+                    print("loss is {}".format(loss))
+                    loss = np.asscalar(loss)
+                    summary_writer.add_summary(summary, i)
+                    losses.put(loss)
+                    if num_losses <= 100:
+                        num_losses += 1
+                    else:
+                        losses.get()
 
-                m = np.mean(np.asarray(losses.queue))
+                    m = np.mean(np.asarray(losses.queue))
 
-                acc_train = model.accuracy(env, pred_value_out)
-                loss_train = loss
-                if abs(acc_train) > 2:
-                    acc_train = None
-                if abs(loss_train) > 2:
-                    loss_train = None
+                    acc_train = model.accuracy(env, pred_value_out)
+                    loss_train = loss
+                    if abs(acc_train) > 2:
+                        acc_train = None
+                    if abs(loss_train) > 2:
+                        loss_train = None
 
-                plotter.add_values(episode_count, loss_train=loss_train, acc_train=acc_train, redraw=False)
+                    plotter.add_values(episode_count, loss_train=loss_train, acc_train=acc_train, redraw=False)
 
-                # Periodically save gifs of episodes, model parameters, and summary statistics.
-                if episode_count % 5 == 0 and episode_count != 0:
-                    if episode_count % 25 == 0:
-                        time_per_step = 0.05
-                        make_train_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
-                        print("{}: Loss={} avg_loss={}".format(episode_count, loss, m))
-                        summary_writer.flush()
-                        plotter.redraw()
+                    # Periodically save gifs of episodes, model parameters, and summary statistics.
+                    if episode_count % 5 == 0 and episode_count != 0:
+                        if episode_count % 50 == 0:
+                            time_per_step = 0.05
+                            make_train_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
+                            print("{}: Loss={} avg_loss={}".format(episode_count, loss, m))
+                            summary_writer.flush()
+                            plotter.redraw()
 
-                    if episode_count % 250 == 0:
-                        saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
-                        print("Saved Model")
+                        if episode_count % 250 == 0:
+                            saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
+                            print("Saved Model")
 
+                env.close()
             test(conf, sess, env, model, args.test_iter)
 
         except KeyboardInterrupt:

@@ -11,6 +11,7 @@ def parse_args(argv):
     parser.add_argument('--server-config', type=str, default=None)
     parser.add_argument('--config', type=str, default=None)
     parser.add_argument('--iter', type=int, default=0)
+    parser.add_argument('--outer-iter', type=int, default=0)
     parser.add_argument('--test-only', dest='test_only', action='store_true')
     parser.add_argument('--dataset', type=str, default=None)
     parser.add_argument('--postfix', type=str, default=None)
@@ -26,6 +27,9 @@ def parse_args(argv):
 
     if args.conf.iter != 0:
         args.iter = args.conf.iter
+
+    if args.conf.outer_iter != 0:
+        args.outer_iter = args.conf.outer_iter
 
     if args.dataset is None:
         args.dataset = args.conf.dataset
@@ -47,6 +51,7 @@ class config(EasyDict):
         self.cheat = False
         self.check_gradients = True
         self.iter = 0
+        self.outer_iter = 0
 
         # a3c
         self.num_workers = 1
