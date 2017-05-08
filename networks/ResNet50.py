@@ -203,4 +203,4 @@ class ResNet50(Network):
        #      .softmax(name='prob'))
 
     def single_image():
-        returne True
+        return True
