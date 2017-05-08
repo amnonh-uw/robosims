@@ -228,6 +228,10 @@ def test_class(context, port=0, start_unity=True, config="learn_distance/test.ya
     class_network_train(args)
 
 @task
+def gen_train_dataset(context, port=0, start_unity=True, config=""):
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config='+config])
+    
+@task
 def gen_train_datasets(context, port=0, start_unity=True):
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm.yaml', '--dataset=50cm.pklz' ])
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm.yaml', '--dataset=20cm.pklz' ])
