@@ -78,7 +78,7 @@ def train_regression(args, model_cls):
                 args.test_iter = 100
         
             print("doing {}*{} training iterations".format(train_iter, train_outer_iter))
-            for i in range(0, train_outer_iter):
+            for outer_i in range(0, train_outer_iter):
                 env = UnityGame(args)
                 for i in range(0, train_iter):
                     env.new_episode()
