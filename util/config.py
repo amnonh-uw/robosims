@@ -52,6 +52,8 @@ class config(EasyDict):
         self.check_gradients = True
         self.iter = 0
         self.outer_iter = 0
+        self.model_save_frequency = 1000
+        self.flush_plot_frequency = 500
 
         # a3c
         self.num_workers = 1

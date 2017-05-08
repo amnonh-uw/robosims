@@ -58,7 +58,7 @@ class FCN_RGB(Network):
         return False
 
     def position_tensor(self):
-        return  self.layers["position"]
+        return self.layers["position"]
 
     def rotation_tensor(self):
         return self.layers["rotation"]

@@ -123,8 +123,8 @@ def train_regression(args, model_cls):
                             model.pred_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
-                    print("pred_value_out is {}".format(pred_value_out))
-                    print("loss is {}".format(loss))
+                    # print("pred_value_out is {}".format(pred_value_out))
+                    # print("loss is {}".format(loss))
                     loss = np.asscalar(loss)
                     summary_writer.add_summary(summary, i)
                     losses.put(loss)
@@ -145,15 +145,14 @@ def train_regression(args, model_cls):
                     plotter.add_values(episode_count, loss_train=loss_train, acc_train=acc_train, redraw=False)
 
                     # Periodically save gifs of episodes, model parameters, and summary statistics.
-                    if episode_count % 5 == 0 and episode_count != 0:
-                        if episode_count % 50 == 0:
-                            time_per_step = 0.05
+                    if episode_count != 0:
+                        if episode_count % conf.flush_plot_frequency == 0:
                             make_train_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
                             print("{}: Loss={} avg_loss={}".format(episode_count, loss, m))
                             summary_writer.flush()
                             plotter.redraw()
 
-                        if episode_count % 250 == 0:
+                        if episode_count % conf.model_save_frequency == 0:
                             saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                             print("Saved Model")
 
