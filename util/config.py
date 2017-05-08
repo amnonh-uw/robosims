@@ -24,6 +24,9 @@ def parse_args(argv):
         print("loading config file")
         args.conf.load(args.config)
 
+    if args.conf.iter != 0:
+        args.iter = args.conf.iter
+
     if args.dataset is None:
         args.dataset = args.conf.dataset
 
@@ -43,6 +46,7 @@ class config(EasyDict):
         self.test_steps = 0
         self.cheat = False
         self.check_gradients = True
+        self.iter = 0
 
         # a3c
         self.num_workers = 1

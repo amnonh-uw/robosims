@@ -61,18 +61,18 @@ class Translation_Model:
         return self.cheat_translation
 
     def accuracy(self, env, pred_translation):
-        if pred_translation.size != 3:
+        if pred_translation.shape[0]!= 3:
             pred_translation = pred_translation[0]
-            if pred_translation.size != 3:
+            if pred_translation.shape[0] != 3:
                 pred_translation = pred_translation[0]
-                if pred_translation.size != 3:
+                if pred_translation.shape[0] != 3:
                     raise ValueError("accuracy excpects pred_value to be of size 3")
 
         true_translation = env.translation()
         delta = true_translation - pred_translation
 
         max_index = np.amax(np.absolute(delta))
-        return(1 - delta[max_index] / true_translation[i])
+        return(1 - delta[max_index] / true_translation[max_index])
 
     def error_str(self, env, pred_translation):
         if pred_translation.size != 3:
