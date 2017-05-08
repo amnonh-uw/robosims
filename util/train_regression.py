@@ -78,6 +78,7 @@ def train_regression(args, model_cls):
                 args.test_iter = 100
         
             print("doing {}*{} training iterations".format(train_iter, train_outer_iter))
+            env = None
             for outer_i in range(0, train_outer_iter):
                 env = UnityGame(args)
                 for i in range(0, train_iter):
@@ -156,7 +157,9 @@ def train_regression(args, model_cls):
                             saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                             print("Saved Model")
 
-                env.close()
+                if env != None:
+                    env.close()
+            plotter.redraw()
             test(conf, sess, env, model, args.test_iter)
 
         except KeyboardInterrupt:
@@ -165,9 +168,9 @@ def train_regression(args, model_cls):
         except (EOFError):
             print("end of pickled file reached")
         finally:
-            env.close()
+            if env != None:
+                env.close()
 
-    plotter.redraw()
 
 def predict(sess, env, model):
         t = env.get_state().target_buffer()

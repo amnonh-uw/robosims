@@ -171,7 +171,6 @@ def flatten(t, max_size=0):
         t = tf.reshape(t, [-1, dim])
     elif input_shape.ndims == 1 or input_shape.ndims == 2:
         dim = input_shape[1]
-        print(dim)
     else:
         raise ValueError("invalid number of dimensions " + str(input_shape.ndims))
 
@@ -232,3 +231,25 @@ def optimistic_restore(session, save_file):
                 print('shape for {} doesnt match'.format(curr_var))
     saver = tf.train.Saver(restore_vars)
     saver.restore(session, save_file)
+
+def mape(a, f, eps=0.001):
+    return abs(a - f/(a+eps))
+
+def mape_accuracy(a, f, eps=0.001):
+    return 1 - mape(a, f, eps)
+
+def  as_vector(a, dim):
+    if a.size != dim:
+        raise ValueError("as_vector excpects pred_value to be of size " + str(dim))
+
+    if a.shape[0] != dim:
+        a = a[0]
+        if a.shape[0] != dim:
+            a = a[0]
+            if a.shape[0] != dim:
+                raise ValueError("as_vector excpects pred_value to be of size " + str(dim))
+
+    return a
+
+def as_scalar(a):
+    return as_vector(a, 1)

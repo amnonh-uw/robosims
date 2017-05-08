@@ -61,40 +61,29 @@ class Translation_Model:
         return self.cheat_translation
 
     def accuracy(self, env, pred_translation):
-        if pred_translation.shape[0]!= 3:
-            pred_translation = pred_translation[0]
-            if pred_translation.shape[0] != 3:
-                pred_translation = pred_translation[0]
-                if pred_translation.shape[0] != 3:
-                    raise ValueError("accuracy excpects pred_value to be of size 3")
-
+        pred_transaction = as_vecotr(pred_translation, 3)
         true_translation = env.translation()
-        delta = true_translation - pred_translation
 
-        max_index = np.amax(np.absolute(delta))
-        return(1 - delta[max_index] / true_translation[max_index])
+        a = np.zeros(3)
+        for i in range(0, 3):
+            a[i] = mape_accuracy(true_translation[i], pred_translation[i])
+
+        return(np.min(a[i]))
 
     def error_str(self, env, pred_translation):
-        if pred_translation.size != 3:
-            pred_translation = pred_translation[0]
-            if pred_translation.size != 3:
-                pred_translation = pred_translation[0]
-                if pred_translation.size != 3:
-                    raise ValueError("error_str excpects pred_value to be of size 3")
+        pred_transaction = as_vector(pred_translation, 3)
 
         true_translation = env.translation()
         delta = true_translation - pred_translation
 
-        s = ""
+        s = "pred_error "
         for i in range(0,3):
-            if abs(true_translation[i]) < 0.01:
-                s += str(round(delta[i], 2)) + "/" + str(round(true_translation[i], 2))
-            else:
-                s += str(abs(round(delta[i]/true_translation[i], 2)) *100) + "%"
+            err = mape(true_translation[i], pred_translation[i])
+            s += str(round(err, 2) *100) + "%"
             if i != 2:
                 s += ','
 
-        return "pred error " + s
+        return s
 
     def name(self):
         return "translation"
