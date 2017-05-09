@@ -157,8 +157,9 @@ def train_regression(args, model_cls):
                             saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                             print("Saved Model")
 
-                if env != None:
+                if env != None and outer_i != train_outer_iter - 1:
                     env.close()
+                    env = None
             plotter.redraw()
             test(conf, sess, env, model, args.test_iter)
 
