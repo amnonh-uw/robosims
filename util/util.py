@@ -233,7 +233,12 @@ def optimistic_restore(session, save_file):
     saver.restore(session, save_file)
 
 def mape(a, f, eps=0.001):
-    return abs(a - f/(a+eps))
+    if isinstance(a, np.ndarray):
+        a = np.asscalar(a)
+    if isinstance(f, np.ndarray):
+        f = np.asscalar(f)
+
+    return abs((a - f)/(a+eps))
 
 def mape_accuracy(a, f, eps=0.001):
     return 1 - mape(a, f, eps)

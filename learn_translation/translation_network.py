@@ -61,10 +61,10 @@ class Translation_Model:
         return self.cheat_translation
 
     def accuracy(self, env, pred_translation):
-        pred_transaction = as_vecotr(pred_translation, 3)
-        true_translation = env.translation()
+        pred_translation = as_vector(pred_translation, 3)
+        true_translation = as_vector(env.translation(), 3)
 
-        a = np.zeros(3)
+        a = np.zeros(3, dtype=np.float32)
         for i in range(0, 3):
             a[i] = mape_accuracy(true_translation[i], pred_translation[i])
 
