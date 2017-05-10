@@ -54,6 +54,8 @@ class config(EasyDict):
         self.outer_iter = 0
         self.model_save_frequency = 1000
         self.flush_plot_frequency = 500
+        self.averages_period = 1000
+        self.batch_size = 10
 
         # a3c
         self.num_workers = 1

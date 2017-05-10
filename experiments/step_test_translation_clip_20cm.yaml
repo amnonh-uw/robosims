@@ -1,5 +1,5 @@
 learning_rate: 1.e-5
-postfix: direction_clip_20cm
+postfix: translation_clip_20cm
 max_distance_delta: 0.2
 max_rotation_delta: 0
 loss_clip_min: 0.1

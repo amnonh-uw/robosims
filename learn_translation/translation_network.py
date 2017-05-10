@@ -9,6 +9,7 @@ from numpy.linalg import norm
 
 class Translation_Model:
     def __init__(self, conf, cls, cheat=False, trainable=False):
+        self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
             self.cheat_translation = tf.placeholder(tf.float32, shape=[None, 3], name='cheat_translation')
         else:
@@ -39,6 +40,9 @@ class Translation_Model:
     def summary_tensor(self):
         return self.summary
 
+    def phase_tensor(self):
+        return(self.phase)
+
     def pred_tensor(self):
         return self.pred_translation
 
@@ -52,7 +56,7 @@ class Translation_Model:
         return self.mid_loss
 
     def true_value(self, env):
-        return(np.reshape(env.translation(), [1,3]))
+        return(np.reshape(env.translation(), [3]))
 
     def cheat_value(self, env):
         return 2 * self.true_value(env)
@@ -60,25 +64,19 @@ class Translation_Model:
     def cheat_tensor(self):
         return self.cheat_translation
 
-    def accuracy(self, env, pred_translation):
-        pred_translation = as_vector(pred_translation, 3)
-        true_translation = as_vector(env.translation(), 3)
-
+    def accuracy(self, true_translation, pred_translation):
         a = np.zeros(3, dtype=np.float32)
         for i in range(0, 3):
-            a[i] = mape_accuracy(true_translation[i], pred_translation[i])
+            a[i] = mape_accuracy(true_translation[:,i], pred_translation[:,i])
 
         return(np.min(a[i]))
 
-    def error_str(self, env, pred_translation):
-        pred_transaction = as_vector(pred_translation, 3)
-
-        true_translation = env.translation()
-        delta = true_translation - pred_translation
-
+    def error_str(self, true_translation, pred_translation):
+        print(pred_translation.shape)
+        print(true_translation.shape)
         s = "pred_error "
         for i in range(0,3):
-            err = mape(true_translation[i], pred_translation[i])
+            err = mape(true_translation[:,i], pred_translation[:,i])
             s += str(round(err, 2) *100) + "%"
             if i != 2:
                 s += ','

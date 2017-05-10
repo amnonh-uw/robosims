@@ -124,7 +124,7 @@ class LossAccPlotter(object):
         self.alpha_thin = 0.5
 
         # the interval for the moving averages, e.g. 20 = average over 20 epochs
-        self.averages_period = 200
+        self.averages_period = 20
 
         # these values deal with the regression
         self.poly_forward_perc = 0.1

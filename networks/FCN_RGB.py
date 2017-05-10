@@ -47,18 +47,19 @@ class FCN_RGB(Network):
              .prelu(name='relu5')
              .fc(256, relu=False, name='ip4')
              .prelu(name='reluip4')
-             .fc(3, relu=False, name='position')
+             .fc(3, relu=False, name='ip6')
              .prelu(name='reluip6'))
 
         (self.feed('reluip4')
-             .fc(3, relu=False, name='rotation')
+             .fc(3, relu=False, name='ip8')
              .prelu(name='reluip8'))
 
     def single_image():
         return False
 
     def position_tensor(self):
-        return self.layers["position"]
+#hmm.... There is another prelu here...  we skipped it.
+        return self.layers["reluip6"]
 
     def rotation_tensor(self):
-        return self.layers["rotation"]
+        return self.layers["reluip8"]

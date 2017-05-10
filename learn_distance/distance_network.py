@@ -7,6 +7,7 @@ from util.util import *
 
 class Distance_Model:
     def __init__(self, conf, cls, cheat=False, trainable=False):
+        self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
             cheat_distance = tf.placeholder(tf.float32, shape=[None, 1], name='cheat_distance')
         else:
@@ -38,6 +39,9 @@ class Distance_Model:
     def summary_tensor(self):
         return self.summary
 
+    def phase_tensor(self):
+        return(self.phase)
+
     def pred_tensor(self):
         return self.pred_distance
 
@@ -51,41 +55,22 @@ class Distance_Model:
         return self.mid_loss
 
     def true_value(self, env):
-        return(np.reshape(env.distance(), [1,1]))
+        return(np.reshape(env.distance(), [1]))
 
     def cheat_value(self, env):
         return 2 * self.true_value(env)
 
-    def accuracy(self, env, pred_distance):
-        if pred_distance.size != 1:
-            raise ValueError("accuracy excpects pred_value to be of size 1")
-        if isinstance(pred_distance, np.ndarray):
-            pred_distance = pred_distance[0]
-            if isinstance(pred_distance, np.ndarray):
-                pred_distance = pred_distance[0]
+    def accuracy(self, true_distance, pred_distance):
+        print(pred_distance.shape)
+        print(true_distance.shape)
 
-        true_distance = env.distance()
-        delta = abs(true_distance - pred_distance)
+        return mape_accuracy(true_distance, pred_distance)
 
-        return 1. - delta/true_distance
+    def error_str(self, true_distance, pred_distance):
+        err = mape(true_distance, pred_distance)
+        err_pct_string = str(round(err, 2) *100) + "%"
 
-    def error_str(self, env, pred_distance):
-        if pred_distance.size != 1:
-            raise ValueError("accuracy excpects pred_value to be of size 1")
-        if isinstance(pred_distance, np.ndarray):
-            pred_distance = pred_distance[0]
-            if isinstance(pred_distance, np.ndarray):
-                pred_distance = pred_distance[0]
-
-        true_distance = env.distance()
-        delta = true_distance - pred_distance
-
-        err_pct_string = str(round(delta/true_distance, 2) *100) + "%"
-        true_distance = round(true_distance, 2)
-        delta = round(delta, 2)
-        err_frac_string = str(delta) + "/" + str(true_distance)
-
-        return "pred error " + err_frac_string + " " + err_pct_string
+        return "pred error " + err_pct_string
 
     def name(self):
         return "distance"

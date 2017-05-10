@@ -24,19 +24,24 @@ def train_regression(args, model_cls):
     model = model_cls(conf, cls, cheat=cheat, trainable=True)
     make_dirs(model.name(), args)
 
-    # optimizer_update = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
+
     # Create an optimizer.
     optimizer = tf.train.AdamOptimizer(learning_rate=conf.learning_rate)
 
-    # Compute the gradients
-    grads_and_vars = optimizer.compute_gradients(model.loss_tensor())
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    # Ensures that we execute the update_ops before calculating
+    # gradients and aplying them
+    with tf.control_dependencies(update_ops):
+        # Compute the gradients
+        grads_and_vars = optimizer.compute_gradients(model.loss_tensor())
 
-    # Ask the optimizer to apply the gradients.
-    optimizer_update = optimizer.apply_gradients(grads_and_vars)
+        # Ask the optimizer to apply the gradients.
+        optimizer_update = optimizer.apply_gradients(grads_and_vars)
 
     saver = tf.train.Saver(max_to_keep=5)
 
     plotter = LossAccPlotter(save_to_filepath=conf.frames_path + "/chart.png")
+    plotter.averages_period = conf.averages_period
 
     with tf.Session() as sess:
         # Instantiate a SummaryWriter to output summaries and the Graph.
@@ -56,8 +61,6 @@ def train_regression(args, model_cls):
         
         try:
             episode_count = 0
-            losses = queue.Queue()
-            num_losses = 0
     
             if args.test_only:
                 if args.iter == 0:
@@ -79,31 +82,57 @@ def train_regression(args, model_cls):
         
             print("doing {}*{} training iterations".format(train_iter, train_outer_iter))
             env = None
+            batch_count = 0
             for outer_i in range(0, train_outer_iter):
                 env = UnityGame(args)
                 for i in range(0, train_iter):
                     env.new_episode()
                     episode_count += 1
+
+                    if batch_count == 0:
+                        t_input = list()
+                        s_input = list()
+                        true_values = list()
+                        if cheat:
+                            cheat_values = list()
+
                     t = env.get_state().target_buffer()
                     s = env.get_state().source_buffer()
 
-                    t_input = process_frame(t)
-                    s_input = process_frame(s)
+                    t_input.append(process_frame(t))
+                    s_input.append(process_frame(s))
+                    true_values.append(model.true_value(env))
 
                     if cheat:
-                        s_input = np.zeros(s_input.shape)
-                        t_input = np.zeros(s_input.shape)
+                        cheat_values.append(model.cheat_value(env))
+
+                    batch_count += 1
+                    if batch_count != conf.batch_size:
+                        continue
+                    batch_count = 0
+
+                    s_input = np.array(s_input)
+                    t_input = np.array(t_input)
+                    true_values = np.array(true_values)
+
+                    print(s_input.shape)
+                    print(t_input.shape)
+                    print(true_values.shape)
+
+                    if cheat:
+                        cheat_values = np.array(cheat_values)
 
                         feed_dict = {
+                             model.phase_tensor():0,
                              model.network.s_input:s_input,
                              model.network.t_input:t_input,
-                             model.cheat_tensor():model.cheat_value(env),
-                             model.true_tensor():model.true_value(env)}
+                             model.cheat_tensor():cheat_values,
+                             model.true_tensor():true_values}
                 
                         if conf.check_gradients:
                             check_grad(sess, grads_and_vars, feed_dict)
 
-                        _, loss, pred_value_out, summary = sess.run([
+                        _, loss, pred_values, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
                             model.pred_tensor(),
@@ -111,33 +140,24 @@ def train_regression(args, model_cls):
 
                     else:
                         feed_dict = {
+                            model.phase_tensor():0,
                             model.network.s_input:s_input,
                             model.network.t_input:t_input,
-                            model.true_tensor():model.true_value(env)}
+                            model.true_tensor():true_values}
 
                         if conf.check_gradients:
                             check_grad(sess, grads_and_vars, feed_dict)
 
-                        _, loss, pred_value_out, summary = sess.run([
+                        _, loss, pred_values, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
                             model.pred_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
-                    # print("pred_value_out is {}".format(pred_value_out))
-                    # print("loss is {}".format(loss))
-                    loss = np.asscalar(loss)
-                    summary_writer.add_summary(summary, i)
-                    losses.put(loss)
-                    if num_losses <= 100:
-                        num_losses += 1
-                    else:
-                        losses.get()
+                    summary_writer.add_summary(summary, episode_count)
 
-                    m = np.mean(np.asarray(losses.queue))
-
-                    acc_train = model.accuracy(env, pred_value_out)
-                    loss_train = loss
+                    acc_train = model.accuracy(true_values, pred_values)
+                    loss_train = loss / conf.batch_size
                     if abs(acc_train) > 2:
                         acc_train = None
                     if abs(loss_train) > 2:
@@ -148,8 +168,7 @@ def train_regression(args, model_cls):
                     # Periodically save gifs of episodes, model parameters, and summary statistics.
                     if episode_count != 0:
                         if episode_count % conf.flush_plot_frequency == 0:
-                            make_train_jpg(conf, "image_",  env, model, pred_value_out, episode_count, loss=loss)
-                            print("{}: Loss={} avg_loss={}".format(episode_count, loss, m))
+                            print("{}: Loss={}".format(episode_count, loss))
                             summary_writer.flush()
                             plotter.redraw()
 
@@ -172,39 +191,29 @@ def train_regression(args, model_cls):
             if env != None:
                 env.close()
 
+def predict(sess, t, s, model):
+    t_input = np.expand_dims(process_frame(t), axis=0)
+    s_input = np.expand_dims(process_frame(s), axis=0)
 
-def predict(sess, env, model):
-        t = env.get_state().target_buffer()
-        s = env.get_state().source_buffer()
+    feed_dict = {
+                model.phase_tensor(): 1,
+                model.network.s_input:s_input,
+                model.network.t_input:t_input }
 
-        t_input = process_frame(t)
-        s_input = process_frame(s)
-
-        feed_dict = { model.network.s_input:s_input, model.network.t_input:t_input}
-        pred_value_out = sess.run([model.pred_tensor()], feed_dict=feed_dict)
-        return (pred_value_out[0])[0]
-
-def make_train_jpg(conf, prefix,  env, model, pred_value_out, episode_count, loss):
-    pred_value = pred_value_out[0]
-    t = env.get_state().target_buffer()
-    s = env.get_state().source_buffer()
-    images = [t, s]
-    err_str = model.error_str(env, pred_value)
-    cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
-    cap_texts2 = [ err_str, "loss{} ".format(loss) ]
-
-    make_jpg(conf, prefix, images, cap_texts, cap_texts2,  episode_count)
+    pred_value = sess.run([model.pred_tensor()], feed_dict=feed_dict)
+    return (pred_value[0])[0]
 
 def test(conf, sess, env, model, test_iter):
     print("testing... {} iterations".format(test_iter))
     for episode_count in range(0, test_iter):
         env.new_episode()
-        pred_value = predict(sess, env, model)
-
         t = env.get_state().target_buffer()
         s = env.get_state().source_buffer()
+        pred_value = predict(sess, t, s,  model)
+        true_value = np.expand_dims(model.true_value(env), axis=0)
+
         images = [t, s]
-        err_str = model.error_str(env, pred_value)
+        err_str = model.error_str(true_value, pred_value)
         cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
         cap_texts2 = [ err_str, "" ]
 
@@ -219,16 +228,12 @@ def test(conf, sess, env, model, test_iter):
                 image = env.get_state().source_buffer()
                 images.append(image)
                 pred_value = predict(sess, env, model)
-                err_str = model.error_str(env, pred_value)
+                true_value = np.expand_dims(model.true_value(env), axis=0)
+                err_str = model.error_str(true_value, pred_value)
                 cap_texts.append("step {}:{}".format(step+1, env.source_str()))
                 cap_texts2.append(err_str)
 
             make_jpg(conf, "test_set_steps_", images, cap_texts, cap_texts2, episode_count)
-
-def process_frame(frame):
-    need_shape = [1]
-    need_shape += frame.shape
-    return np.reshape(frame.astype(float)/ 255.0, need_shape)
 
 def check_grad(sess, grads_and_vars, feed_dict):
     for gv in grads_and_vars:
