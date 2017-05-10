@@ -115,10 +115,6 @@ def train_regression(args, model_cls):
                     t_input = np.array(t_input)
                     true_values = np.array(true_values)
 
-                    print(s_input.shape)
-                    print(t_input.shape)
-                    print(true_values.shape)
-
                     if cheat:
                         cheat_values = np.array(cheat_values)
 
@@ -200,8 +196,8 @@ def predict(sess, t, s, model):
                 model.network.s_input:s_input,
                 model.network.t_input:t_input }
 
-    pred_value = sess.run([model.pred_tensor()], feed_dict=feed_dict)
-    return (pred_value[0])[0]
+    pred_value = sess.run(model.pred_tensor(), feed_dict=feed_dict)
+    return pred_value
 
 def test(conf, sess, env, model, test_iter):
     print("testing... {} iterations".format(test_iter))

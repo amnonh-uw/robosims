@@ -61,9 +61,6 @@ class Distance_Model:
         return 2 * self.true_value(env)
 
     def accuracy(self, true_distance, pred_distance):
-        print(pred_distance.shape)
-        print(true_distance.shape)
-
         return mape_accuracy(true_distance, pred_distance)
 
     def error_str(self, true_distance, pred_distance):

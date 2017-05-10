@@ -72,8 +72,6 @@ class Translation_Model:
         return(np.min(a[i]))
 
     def error_str(self, true_translation, pred_translation):
-        print(pred_translation.shape)
-        print(true_translation.shape)
         s = "pred_error "
         for i in range(0,3):
             err = mape(true_translation[:,i], pred_translation[:,i])
