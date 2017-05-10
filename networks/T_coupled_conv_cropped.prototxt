@@ -115,7 +115,7 @@ layer {
     lr_mult: 0
   }
  batch_norm_param {
-    use_global_stats: false
+    use_global_stats: false  ### this means the network is training..
   }
 
 }

@@ -1,5 +1,5 @@
 learning_rate: 1.e-5
-postfix: direction_20cm_FCN
+postfix: translation_20cm_FCN
 dataset: 20cm.pklz
 max_distance_delta: 1.
 max_rotation_delta: 0

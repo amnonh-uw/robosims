@@ -31,9 +31,11 @@ def layer(op):
 
 class Network(object):
 
-    def __init__(self, inputs, trainable=True):
+    def __init__(self, inputs, phase, trainable=True):
         # The input nodes for this network
         self.inputs = inputs
+        # tensor telling us if we are training or testing (required for batch norm)
+        self.phase = phase
         # The current list of terminal nodes
         self.terminals = []
         # Mapping from layer names to layers
@@ -246,29 +248,16 @@ class Network(object):
         return tf.nn.softmax(input, name)
 
     @layer
-    def batch_normalization(self, input, name, scale_offset=True, relu=False):
-        # NOTE: Currently, only inference is supported
+    def batch_normalization(self, input, name, decay=0.999, epsilon=1e-5):
         with tf.variable_scope(name) as scope:
-            shape = [input.get_shape()[-1]]
-            if scale_offset:
-                scale = self.make_var('scale', shape=shape)
-                offset = self.make_var('offset', shape=shape)
-                # offet = tf.Print(offset, [scale, offset], "batch normalization scale and offset " + name)
-            else:
-                scale, offset = (None, None)
-            output = tf.nn.batch_normalization(
-                input,
-                mean=self.make_var('mean', shape=shape),
-                variance=self.make_var('variance', shape=shape),
-                offset=offset,
-                scale=scale,
-                # TODO: This is the default Caffe batch norm eps
-                # Get the actual eps from parameters
-                variance_epsilon=1e-5,
-                name=name)
-            if relu:
-                output = tf.nn.relu(output)
-            return output
+            print("batch norm input shape {}".format(input.shape))
+            output = tf.contrib.layers.batch_norm(input,
+                                          center=True, scale=True, 
+                                          is_training=self.phase,
+                                          decay=decay,
+                                          epsilon=epsilon,
+                                          scope='bn')
+        return output
 
     @layer
     def dropout(self, input, keep_prob, name):

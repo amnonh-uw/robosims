@@ -4,8 +4,6 @@ import numpy as np
 import math
 from robosims.unity import UnityGame
 from util.util import *
-from scipy.spatial.distance import euclidean
-from numpy.linalg import norm
 
 class Translation_Model:
     def __init__(self, conf, cls, cheat=False, trainable=False):
@@ -15,7 +13,7 @@ class Translation_Model:
         else:
             self.cheat_translation = None
 
-        self.network = Translation_Network(conf, cls, "main", self.cheat_translation, trainable=trainable)
+        self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat_translation, trainable=trainable)
         self.pred_translation = self.network.get_output()
 
         self.mid_loss = 0.5 * 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
@@ -85,7 +83,7 @@ class Translation_Model:
         return "translation"
 
 class Translation_Network():
-    def __init__(self, conf, cls, scope, cheat = None, trainable=False):
+    def __init__(self, conf, cls, scope, phase, cheat = None, trainable=False):
         self.scope = scope
 
         with tf.variable_scope(scope):
@@ -96,10 +94,10 @@ class Translation_Network():
 
             if cls.single_image():
                 with tf.variable_scope("siamese_network"):
-                    self.source_net = cls({'data': self.s_input}, trainable=trainable)
+                    self.source_net = cls({'data': self.s_input}, phase, trainable=trainable)
 
                 with tf.variable_scope("siamese_network", reuse=True):
-                    self.target_net = cls({'data': self.t_input}, trainable=trainable)
+                    self.target_net = cls({'data': self.t_input}, phase, trainable=trainable)
 
                 self.s_out = flatten(self.source_net.get_output())
                 self.t_out = flatten(self.target_net.get_output())
@@ -119,9 +117,8 @@ class Translation_Network():
                     weights_initializer=normalized_columns_initializer(1.0),
                     biases_initializer=None, scope='translation_pred')
             else:
-                self.net = cls({'image_data': self.s_input, 'image_data_pert' : self.t_input}, trainable=trainable)
+                self.net = cls({'image_data': self.s_input, 'image_data_pert' : self.t_input}, phase, trainable=trainable)
                 self.translation_pred = self.net.position_tensor()
-
             
     def get_output(self):
         return(self.translation_pred)

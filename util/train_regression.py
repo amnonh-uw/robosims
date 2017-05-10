@@ -24,11 +24,10 @@ def train_regression(args, model_cls):
     model = model_cls(conf, cls, cheat=cheat, trainable=True)
     make_dirs(model.name(), args)
 
-
     # Create an optimizer.
     optimizer = tf.train.AdamOptimizer(learning_rate=conf.learning_rate)
-
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
     # Ensures that we execute the update_ops before calculating
     # gradients and aplying them
     with tf.control_dependencies(update_ops):
@@ -61,6 +60,7 @@ def train_regression(args, model_cls):
         
         try:
             episode_count = 0
+            batch_count = 0
     
             if args.test_only:
                 if args.iter == 0:
@@ -82,14 +82,14 @@ def train_regression(args, model_cls):
         
             print("doing {}*{} training iterations".format(train_iter, train_outer_iter))
             env = None
-            batch_count = 0
+            episodes_in_batch = 0
             for outer_i in range(0, train_outer_iter):
                 env = UnityGame(args)
                 for i in range(0, train_iter):
                     env.new_episode()
                     episode_count += 1
 
-                    if batch_count == 0:
+                    if episodes_in_batch == 0:
                         t_input = list()
                         s_input = list()
                         true_values = list()
@@ -106,10 +106,11 @@ def train_regression(args, model_cls):
                     if cheat:
                         cheat_values.append(model.cheat_value(env))
 
-                    batch_count += 1
-                    if batch_count != conf.batch_size:
+                    episodes_in_batch += 1
+                    if episodes_in_batch != conf.batch_size:
                         continue
-                    batch_count = 0
+                    episodes_in_batch = 0
+                    batch_count += 1
 
                     s_input = np.array(s_input)
                     t_input = np.array(t_input)
@@ -124,51 +125,42 @@ def train_regression(args, model_cls):
                              model.network.t_input:t_input,
                              model.cheat_tensor():cheat_values,
                              model.true_tensor():true_values}
-                
-                        if conf.check_gradients:
-                            check_grad(sess, grads_and_vars, feed_dict)
-
-                        _, loss, pred_values, summary = sess.run([
-                            optimizer_update,
-                            model.loss_tensor(),
-                            model.pred_tensor(),
-                            model.summary_tensor()], feed_dict=feed_dict)
-
                     else:
                         feed_dict = {
                             model.phase_tensor():0,
                             model.network.s_input:s_input,
                             model.network.t_input:t_input,
                             model.true_tensor():true_values}
+                
+                    if conf.check_gradients:
+                        check_grad(sess, grads_and_vars, feed_dict)
 
-                        if conf.check_gradients:
-                            check_grad(sess, grads_and_vars, feed_dict)
-
-                        _, loss, pred_values, summary = sess.run([
+                    _, loss, pred_values, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
                             model.pred_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
-                    summary_writer.add_summary(summary, episode_count)
+                    summary_writer.add_summary(summary, batch_count)
 
                     acc_train = model.accuracy(true_values, pred_values)
-                    loss_train = loss / conf.batch_size
+                    loss = loss / conf.batch_size
+                    loss_train = loss 
                     if abs(acc_train) > 2:
                         acc_train = None
                     if abs(loss_train) > 2:
                         loss_train = None
 
-                    plotter.add_values(episode_count, loss_train=loss_train, acc_train=acc_train, redraw=False)
+                    plotter.add_values(batch_count, loss_train=loss_train, acc_train=acc_train, redraw=False)
 
                     # Periodically save gifs of episodes, model parameters, and summary statistics.
-                    if episode_count != 0:
-                        if episode_count % conf.flush_plot_frequency == 0:
+                    if batch_count != 0:
+                        if batch_count % conf.flush_plot_frequency == 0:
                             print("{}: Loss={}".format(episode_count, loss))
                             summary_writer.flush()
                             plotter.redraw()
 
-                        if episode_count % conf.model_save_frequency == 0:
+                        if batch_count % conf.model_save_frequency == 0:
                             saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                             print("Saved Model")
 

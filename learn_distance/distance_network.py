@@ -16,7 +16,7 @@ class Distance_Model:
         self.max_delta = math.sqrt(3 * conf.max_distance_delta * conf.max_distance_delta)
         self.mid_loss = 0.5 * self.max_delta * self.max_delta
 
-        self.network = Distance_Network(conf, cls, "main", cheat_distance, trainable=trainable)
+        self.network = Distance_Network(conf, cls, "main", self.phase, cheat_distance, trainable=trainable)
         self.pred_distance = self.network.get_output()
 
         # Mean squared error
@@ -73,7 +73,7 @@ class Distance_Model:
         return "distance"
 
 class Distance_Network:
-    def __init__(self, conf, cls, scope, cheat = None, trainable=False):
+    def __init__(self, conf, cls, scope, phase, cheat = None, trainable=False):
         self.scope = scope
 
         with tf.variable_scope(scope):
@@ -83,10 +83,10 @@ class Distance_Network:
             self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
 
             with tf.variable_scope("siamese_network"):
-                self.source_net = cls({'data': self.s_input}, trainable=trainable)
+                self.source_net = cls({'data': self.s_input}, phase, trainable=trainable)
 
             with tf.variable_scope("siamese_network", reuse=True):
-                self.target_net = cls({'data': self.t_input}, trainable=trainable)
+                self.target_net = cls({'data': self.t_input}, phase, trainable=trainable)
 
             self.s_out = flatten(self.source_net.get_output())
             self.t_out = flatten(self.target_net.get_output())
