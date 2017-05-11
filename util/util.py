@@ -237,7 +237,6 @@ def mape(a, f, eps=0.001):
     if isinstance(a, np.ndarray):
         a = np.ravel(a)
         n = a.shape[0]
-        print("mape batch size {}".format(n))
     if isinstance(f, np.ndarray):
         f = np.ravel(f)
 
