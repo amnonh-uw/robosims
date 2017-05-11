@@ -56,6 +56,8 @@ class config(EasyDict):
         self.flush_plot_frequency = 20 # batches
         self.averages_period = 20 # batches
         self.batch_size = 64
+        self.log_device_placement = True
+        self.allow_soft_placement = True
 
         # a3c
         self.num_workers = 1

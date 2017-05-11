@@ -42,7 +42,8 @@ def train_regression(args, model_cls):
     plotter = LossAccPlotter(save_to_filepath=conf.frames_path + "/chart.png")
     plotter.averages_period = conf.averages_period
 
-    with tf.Session() as sess:
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=conf.allow_soft_placement,
+                                          log_device_placement=conf.log_device_placement)) as sess:
         # Instantiate a SummaryWriter to output summaries and the Graph.
         summary_writer = tf.summary.FileWriter(conf.log_path, sess.graph)
         summary_writer.flush()

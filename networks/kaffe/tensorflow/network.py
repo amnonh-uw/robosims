@@ -250,7 +250,6 @@ class Network(object):
     @layer
     def batch_normalization(self, input, name, decay=0.999, epsilon=1e-5):
         with tf.variable_scope(name) as scope:
-            print("batch norm input shape {}".format(input.shape))
             output = tf.contrib.layers.batch_norm(input,
                                           center=True, scale=True, 
                                           is_training=self.phase,
