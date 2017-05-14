@@ -1,6 +1,7 @@
 import argparse
 import yaml
 import re
+import os
 from easydict import EasyDict
 
 def parse_args(argv):
@@ -24,6 +25,8 @@ def parse_args(argv):
     if args.config != None:
         print("loading config file")
         args.conf.load(args.config)
+        if postfix is None:
+            postfix = os.path.splitext(args.config)[0]
 
     if args.conf.iter != 0:
         args.iter = args.conf.iter
