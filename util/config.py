@@ -58,6 +58,7 @@ class config(EasyDict):
         self.batch_size = 64
         self.log_device_placement = True
         self.allow_soft_placement = True
+        self.colocate_gradients_with_ops = True
 
         # a3c
         self.num_workers = 1

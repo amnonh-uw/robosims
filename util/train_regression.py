@@ -32,7 +32,7 @@ def train_regression(args, model_cls):
     # gradients and aplying them
     with tf.control_dependencies(update_ops):
         # Compute the gradients
-        grads_and_vars = optimizer.compute_gradients(model.loss_tensor())
+        grads_and_vars = optimizer.compute_gradients(model.loss_tensor(), colocate_gradients_with_ops=conf.colocate_gradients_with_ops)
 
         # Ask the optimizer to apply the gradients.
         optimizer_update = optimizer.apply_gradients(grads_and_vars)
