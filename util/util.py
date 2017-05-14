@@ -240,7 +240,8 @@ def mape(a, f, eps=0.001):
     if isinstance(f, np.ndarray):
         f = np.ravel(f)
 
-    return np.sum(abs((a - f)/(a+eps))) / n
+    m =  np.sum(abs((a - f)/(a+eps))) / n
+    print("m is {}, n is {}".format(n))
 
 def mape_accuracy(a, f, eps=0.001):
     return 1 - mape(a, f, eps)
