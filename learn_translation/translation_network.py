@@ -65,9 +65,11 @@ class Translation_Model:
     def accuracy(self, true_translation, pred_translation):
         a = np.zeros(3, dtype=np.float32)
         for i in range(0, 3):
+            print(true_translation[:,i].shape)
+            print(pred_translation[:,i].shape)
             a[i] = mape_accuracy(true_translation[:,i], pred_translation[:,i])
 
-        return(np.min(a[i]))
+        return(np.min(a))
 
     def error_str(self, true_translation, pred_translation):
         s = "pred_error "
