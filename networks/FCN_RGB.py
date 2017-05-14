@@ -8,7 +8,9 @@ class FCN_RGB(Network):
                 .conv(9, 9, 64, 1, 1, relu=False, name='conv0')
                 .max_pool(3, 3, 2, 2, name='pool0')
                 .batch_normalization(name='bn0')
-                .prelu(name='relu0')
+                .prelu(name='relu0'))
+        with tf.device('/gpu:1'):
+            (self.feed('relu0')
                 .conv(7, 7, 64, 1, 1, relu=False, name='conv1')
                 .max_pool(3, 3, 2, 2, name='pool1')
                 .batch_normalization( name='bn1')
@@ -33,7 +35,7 @@ class FCN_RGB(Network):
                 .batch_normalization( name='bn_per2')
                 .prelu(name='relu_per2'))
 
-        with tf.device('/gpu:0'):
+        with tf.device('/gpu:2'):
             (self.feed('relu2', 'relu_per2')
                 .concat(3, name='concat')
                 .conv(3, 3, 64, 1, 1, relu=False, name='conv3')
