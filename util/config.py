@@ -25,8 +25,8 @@ def parse_args(argv):
     if args.config != None:
         print("loading config file")
         args.conf.load(args.config)
-        if postfix is None:
-            postfix = os.path.splitext(args.config)[0]
+        if args.conf.postfix is None:
+            args.conf.postfix = os.path.splitext(os.path.basename(args.config))[0]
 
     if args.conf.iter != 0:
         args.iter = args.conf.iter
@@ -50,6 +50,7 @@ class config(EasyDict):
     def __init__(self):
         self.postfix = None
         self.dataset = None
+        self.testset = None
         self.test_steps = 0
         self.cheat = False
         self.check_gradients = True
@@ -59,9 +60,10 @@ class config(EasyDict):
         self.flush_plot_frequency = 20 # batches
         self.averages_period = 20 # batches
         self.batch_size = 64
-        self.log_device_placement = True
+        self.log_device_placement = False
         self.allow_soft_placement = True
         self.colocate_gradients_with_ops = True
+        self.use_adam = True
 
         # a3c
         self.num_workers = 1
@@ -115,8 +117,8 @@ class config(EasyDict):
         # self.load_base_weights = False
 
         # loss
-        self.loss_clip_min = None
-        self.loss_clip_max = None
+        self.error_clip_min = None
+        self.error_clip_max = None
         # self.loss_clip_min = 0.1        # 10%
         # self.loss_clip_max = 1.1        # 110%
         self.entropy_loss_weight = 500.
