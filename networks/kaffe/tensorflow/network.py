@@ -248,7 +248,7 @@ class Network(object):
         return tf.nn.softmax(input, name)
 
     @layer
-    def batch_normalization(self, input, name, decay=0.999, epsilon=1e-5):
+    def batch_normalization(self, input, name, relu=False, decay=0.999, epsilon=1e-5):
         with tf.variable_scope(name) as scope:
             output = tf.contrib.layers.batch_norm(input,
                                           center=True, scale=True, 
@@ -256,6 +256,9 @@ class Network(object):
                                           decay=decay,
                                           epsilon=epsilon,
                                           scope='bn')
+            if relu:
+                output = tf.nn.relu(output)
+
         return output
 
     @layer
