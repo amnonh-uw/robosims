@@ -16,23 +16,17 @@ class Translation_Model:
         self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat_translation, trainable=trainable)
         self.pred_translation = self.network.get_output()
 
-        self.mid_loss = 0.5 * 3 * 0.5 * conf.max_distance_delta * conf.max_distance_delta
-        self.max_delta = conf.max_distance_delta
-
-        # Mean squared error
         self.translation = tf.placeholder(tf.float32, name='translation', shape=[None, 3])
-        if conf.loss_clip_min != None:
-            clip_value_min = conf.loss_clip_min * self.translation
-            clip_value_max = conf.loss_clip_max * self.translation
-            self.delta = tf.clip_by_value(tf.abs(self.pred_translation - self.translation), clip_value_min, clip_value_max, name='clipped_delta') - clip_value_min
-            # delta is not a scalar
-            # variable_summaries(self.delta)
-        else:
-            self.delta = self.pred_translation - self.translation
 
-        self.loss = tf.nn.l2_loss(self.delta, name='loss')
+        self.delta = self.pred_translation - self.translation
+        self.error = tf.abs(tf.divide(self.delta,  self.translation+0.001))
+        if conf.error_clip_min != None:
+            self.error = tf.clip_by_value(self.error, conf.error_clip_min,
+                                conf.error_clip_max, name='clipped_error') - conf.error_clip_min
 
-        variable_summaries(self.loss)
+        # l2 loss
+        self.l2_loss = tf.nn.l2_loss(self.error, name='l2_loss')
+        variable_summaries(self.l2_loss)
         self.summary = tf.summary.merge_all()
 
     def summary_tensor(self):
@@ -48,10 +42,7 @@ class Translation_Model:
         return(self.translation)
 
     def loss_tensor(self):
-        return(self.loss)
-
-    def chance_loss(self):
-        return self.mid_loss
+        return(self.l2_loss)
 
     def true_value(self, env):
         return(np.reshape(env.translation(), [3]))
@@ -65,17 +56,22 @@ class Translation_Model:
     def accuracy(self, true_translation, pred_translation):
         a = np.zeros(3, dtype=np.float32)
         for i in range(0, 3):
-            print(true_translation[:,i].shape)
-            print(pred_translation[:,i].shape)
             a[i] = mape_accuracy(true_translation[:,i], pred_translation[:,i])
 
         return(np.min(a))
 
     def error_str(self, true_translation, pred_translation):
+        if true_translation.shape[0] != 1:
+            raise ValueError("error_str excpects test_transaltion to be a vector")
+
         s = "pred_error "
         for i in range(0,3):
-            err = mape(true_translation[:,i], pred_translation[:,i])
-            s += str(round(err, 2) *100) + "%"
+            relative_err = mape(true_translation[:,i], pred_translation[:,i])
+            s += str(round(relative_err, 2) *100) + "% "
+            absolute_err = abs(true_translation[0,i] - pred_translation[0,i])
+            s += str(round(absolute_err, 2))
+            s += " from "
+            s += str(round(true_translation[0,i], 2))
             if i != 2:
                 s += ','
 
