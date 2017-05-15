@@ -25,7 +25,11 @@ def train_regression(args, model_cls):
     make_dirs(model.name(), args)
 
     # Create an optimizer.
-    optimizer = tf.train.AdamOptimizer(learning_rate=conf.learning_rate)
+    if conf.use_adam:
+        optimizer = tf.train.AdamOptimizer(learning_rate=conf.learning_rate)
+    else:
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=conf.learning_rate)
+        
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
     # Ensures that we execute the update_ops before calculating
@@ -38,9 +42,6 @@ def train_regression(args, model_cls):
         optimizer_update = optimizer.apply_gradients(grads_and_vars)
 
     saver = tf.train.Saver(max_to_keep=5)
-
-    plotter = LossAccPlotter(save_to_filepath=conf.frames_path + "/chart.png")
-    plotter.averages_period = conf.averages_period
 
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=conf.allow_soft_placement,
                                           log_device_placement=conf.log_device_placement)) as sess:
@@ -71,6 +72,9 @@ def train_regression(args, model_cls):
                 train_iter = 0
                 train_outer_iter = 0
             else:
+                plotter = LossAccPlotter(save_to_filepath=conf.frames_path + "/chart.png")
+                plotter.averages_period = conf.averages_period
+
                 if args.iter == 0:
                     train_iter = 40000
                 else:
@@ -168,7 +172,11 @@ def train_regression(args, model_cls):
                 if env != None and outer_i != train_outer_iter - 1:
                     env.close()
                     env = None
-            plotter.redraw()
+            if not args.test_only:
+                plotter.redraw()
+
+            if env is None:
+                env = UnityGame(args)
             test(conf, sess, env, model, args.test_iter)
 
         except KeyboardInterrupt:
