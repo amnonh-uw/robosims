@@ -241,7 +241,7 @@ def mape(a, f, eps=0.001):
         f = np.ravel(f)
 
     m =  np.sum(abs((a - f)/(a+eps))) / n
-    print("m is {}, n is {}".format(n))
+    return m
 
 def mape_accuracy(a, f, eps=0.001):
     return 1 - mape(a, f, eps)
