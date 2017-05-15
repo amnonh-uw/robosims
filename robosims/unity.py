@@ -7,9 +7,12 @@ import pickle
 import gzip
 
 class UnityGame:
-    def __init__(self, args, port=0, start_unity = True):
+    def __init__(self, args, port=0, start_unity = True, dataset=None):
         self.conf = args.conf
-        if args.dataset == None or args.gen_dataset:
+        if dataset is None:
+            dataset = args.dataset
+
+        if dataset == None or args.gen_dataset:
             self.controller = robosims.server.Controller(args.server_config)
             self.controller.start(port, start_unity)
             self.get_structure_info()
