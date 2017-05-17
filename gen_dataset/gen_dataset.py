@@ -3,7 +3,7 @@ from util.util import *
 from util.config import *
 import pickle
 import sys
-import gzip
+import numpy as np
 
 def gen_dataset(argv):
     args = parse_args(argv)
@@ -26,10 +26,17 @@ def gen_dataset(argv):
         
     print(conf)
     print("generating {} samples to {}".format(train_iter, args.dataset))
-    with gzip.open(args.dataset, 'wb') as dataset:
+    data_file, idx_file  = dataset_files(args.dataset)
+    index = np.zeros([train_iter], dtype=int)
+
+    with open(data_file, 'wb') as data:
         for i in range(0, train_iter):
             env.new_episode()
-            pickle.dump(env, dataset, pickle.HIGHEST_PROTOCOL)
+            index[i] = data.tell()
+            pickle.dump(env, data, pickle.HIGHEST_PROTOCOL)
 
+    with open(idx_file, 'wb') as idx:
+        pickle.dump(index, idx, pickle.HIGHEST_PROTOCOL)
+        
 if __name__ == "__main__":
     gen_dataset(sys.argv[1:])

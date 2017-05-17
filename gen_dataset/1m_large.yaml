@@ -6,4 +6,4 @@ probe_distance: 1.
 grid_distance: 0.01
 grid_rotation: 0.1
 iter: 160000
-dataset: 1m_large.pklz
+dataset: 1m_large
