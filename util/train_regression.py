@@ -30,16 +30,16 @@ def train_regression(args, model_cls):
     else:
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=conf.learning_rate)
         
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    #update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
     # Ensures that we execute the update_ops before calculating
     # gradients and aplying them
-    with tf.control_dependencies(update_ops):
+    #with tf.control_dependencies(update_ops):
         # Compute the gradients
-        grads_and_vars = optimizer.compute_gradients(model.loss_tensor(), colocate_gradients_with_ops=conf.colocate_gradients_with_ops)
+    grads_and_vars = optimizer.compute_gradients(model.loss_tensor(), colocate_gradients_with_ops=conf.colocate_gradients_with_ops)
 
         # Ask the optimizer to apply the gradients.
-        optimizer_update = optimizer.apply_gradients(grads_and_vars)
+    optimizer_update = optimizer.apply_gradients(grads_and_vars)
 
     saver = tf.train.Saver(max_to_keep=5)
 
@@ -70,7 +70,7 @@ def train_regression(args, model_cls):
                 else:
                     args.test_iter = args.iter
                 train_iter = 0
-                train_outer_iter = 0
+                train_epochs = 0
             else:
                 plotter = LossAccPlotter(save_to_filepath=conf.frames_path + "/chart.png")
                 plotter.averages_period = conf.averages_period
@@ -79,17 +79,18 @@ def train_regression(args, model_cls):
                     train_iter = 40000
                 else:
                     train_iter = args.iter
-                if args.outer_iter == 0:
-                    train_outer_iter = 1
+                if args.epochs == 0:
+                    train_epochs = 1
                 else:
-                    train_outer_iter = args.outer_iter
+                    train_epochs = args.epochs
                 args.test_iter = 100
         
-            print("doing {}*{} training iterations".format(train_iter, train_outer_iter))
+            print("doing {}*{} training iterations".format(train_iter, train_epochs))
             env = None
             episodes_in_batch = 0
-            for outer_i in range(0, train_outer_iter):
-                env = UnityGame(args)
+            for epoch in range(0, train_epochs):
+                print("epoch {}".format(epoch))
+                env = UnityGame(args, num_iter=train_iter)
                 for i in range(0, train_iter):
                     env.new_episode()
                     episode_count += 1
@@ -104,8 +105,8 @@ def train_regression(args, model_cls):
                     t = env.get_state().target_buffer()
                     s = env.get_state().source_buffer()
 
-                    t_input.append(process_frame(t))
-                    s_input.append(process_frame(s))
+                    t_input.append(process_frame(t, cls))
+                    s_input.append(process_frame(s, cls))
                     true_values.append(model.true_value(env))
 
                     if cheat:
@@ -140,15 +141,17 @@ def train_regression(args, model_cls):
                     if conf.check_gradients:
                         check_grad(sess, grads_and_vars, feed_dict)
 
-                    _, loss, pred_values, summary = sess.run([
+                    _, loss, pred_values, errors, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
                             model.pred_tensor(),
+                            model.error_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
                     summary_writer.add_summary(summary, batch_count)
 
-                    acc_train = model.accuracy(true_values, pred_values)
+                    err = np.sum(errors) / errors.size
+                    acc_train = 1 - err
                     loss = loss / conf.batch_size
                     loss_train = loss 
                     if abs(acc_train) > 2:
@@ -161,7 +164,7 @@ def train_regression(args, model_cls):
                     # Periodically save gifs of episodes, model parameters, and summary statistics.
                     if batch_count != 0:
                         if batch_count % conf.flush_plot_frequency == 0:
-                            print("{}: Loss={}".format(episode_count, loss))
+                            print("{}: Loss={} err={}".format(episode_count, loss, err))
                             summary_writer.flush()
                             plotter.redraw()
 
@@ -169,15 +172,14 @@ def train_regression(args, model_cls):
                             saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                             print("Saved Model")
 
-                if env != None and outer_i != train_outer_iter - 1:
+                if env != None and epoch != train_epochs - 1:
                     env.close()
                     env = None
             if not args.test_only:
                 plotter.redraw()
 
-            if env is None:
-                env = UnityGame(args)
-            test(conf, sess, env, model, args.test_iter)
+            env = UnityGame(args, args.test_iter)
+            test(conf, sess, env, model, cls, args.test_iter)
 
         except KeyboardInterrupt:
             print("W: interrupt received, stopping…")
@@ -188,9 +190,9 @@ def train_regression(args, model_cls):
             if env != None:
                 env.close()
 
-def predict(sess, t, s, model):
-    t_input = np.expand_dims(process_frame(t), axis=0)
-    s_input = np.expand_dims(process_frame(s), axis=0)
+def predict(sess, t, s, model, cls):
+    t_input = np.expand_dims(process_frame(t, cls), axis=0)
+    s_input = np.expand_dims(process_frame(s, cls), axis=0)
 
     feed_dict = {
                 model.phase_tensor(): 1,
@@ -200,13 +202,13 @@ def predict(sess, t, s, model):
     pred_value = sess.run(model.pred_tensor(), feed_dict=feed_dict)
     return pred_value
 
-def test(conf, sess, env, model, test_iter):
+def test(conf, sess, env, model, cls, test_iter):
     print("testing... {} iterations".format(test_iter))
     for episode_count in range(0, test_iter):
         env.new_episode()
         t = env.get_state().target_buffer()
         s = env.get_state().source_buffer()
-        pred_value = predict(sess, t, s,  model)
+        pred_value = predict(sess, t, s,  model, cls)
         true_value = np.expand_dims(model.true_value(env), axis=0)
 
         images = [t, s]
