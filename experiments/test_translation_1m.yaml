@@ -1,5 +1,5 @@
 learning_rate: 1.e-5
 postfix: translation_1m
-dataset: test_1m.pklz
+dataset: test_1m
 max_distance_delta: 1.
 max_rotation_delta: 0

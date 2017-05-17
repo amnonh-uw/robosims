@@ -1,5 +1,5 @@
 learning_rate: 1.e-5
 postfix: translation_50cm
-dataset: 50cm.pklz
+dataset: 50cm
 max_distance_delta: 0.5
 max_rotation_delta: 0
