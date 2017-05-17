@@ -30,6 +30,7 @@ ExportedObj/
 *.out
 *.data
 *.idx
+*.tar
 
 
 # Unity3D generated meta files
