@@ -233,9 +233,9 @@ def gen_train_dataset(context, port=0, start_unity=True, config=""):
     
 @task
 def gen_train_datasets(context, port=0, start_unity=True):
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm.yaml', '--dataset=50cm.pklz' ])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm.yaml', '--dataset=20cm.pklz' ])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m.yaml', '--dataset=1m.pklz' ])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_50cm.yaml', '--dataset=test_50cm.pklz', '--test-only' ])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_20cm.yaml', '--dataset=test_20cm.pklz', '--test-only'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_1m.yaml', '--dataset=test_1m.pklz', '--test-only'])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm.yaml'])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm.yaml'])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m.yaml'])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_50cm.yaml', ])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_20cm.yaml', ])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_1m.yaml', ])
