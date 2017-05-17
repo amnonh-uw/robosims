@@ -63,7 +63,6 @@ class FCN_RGB(Network):
         return False
 
     def position_tensor(self):
-#hmm.... There was another prelu here...  we skipped it.
         return self.layers["reluip6"]
 
     def rotation_tensor(self):
