@@ -204,3 +204,9 @@ class ResNet50(Network):
 
     def single_image():
         return True
+
+    @staticmethod
+    def mean():
+        # Pixel mean values (BGR order) as a (1, 1, 3) array
+        # These are the values originally used for training RESNET50
+        return np.array([[[102.9801, 115.9465, 122.7717]]])

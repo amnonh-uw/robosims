@@ -20,7 +20,10 @@ class AlexNet(Network):
 
 
     def single_image():
-        returne True
+        return True
 
-    def weights_file_name(self):
-        return 'AlexNet.npy'
+   @staticmethod
+   def mean():
+        # Pixel mean values (BGR order) as a (1, 1, 3) array
+        # These are the values originally used for training AlexNet
+        return np.array([[[102.9801, 115.9465, 122.7717]]])
