@@ -4,10 +4,11 @@ import numpy as np
 import robosims.server
 from robosims.actions import *
 import pickle
-import gzip
+
 
 class UnityGame:
-    def __init__(self, args, port=0, start_unity = True, dataset=None):
+    def __init__(self, args, port=0, start_unity = True, dataset=None, num_iter=0):
+        random.seed()
         self.conf = args.conf
         if dataset is None:
             dataset = args.dataset
@@ -18,20 +19,33 @@ class UnityGame:
             self.get_structure_info()
         else:
             self.controller = None
-            self.dataset = gzip.open(args.dataset, 'rb')
+            data_file, idx_file  = self.dataset_files(args.dataset)
+            with open(idx_file, "rb") as idx:
+                self.index = pickle.load(idx)
+                if num_iter != 0:
+                    self.index = self.index[:num_iter]
+                np.random.shuffle(self.index)
+                self.episode_counter = 0
 
-        random.seed()
+            self.dataset = open(data_file, "rb")
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['controller']
         return state
 
+    def dataset_files(self, dataset):
+        idx_file = dataset + ".idx"
+        data_file = dataset + ".data"
+
+        return data_file, idx_file
+
     def close (self):
+        if self.dataset != None:
+            self.dataset.close()
+
         if self.controller != None:
             self.controller.stop()
-        else:
-            self.dataset.close()
 
     def reset(self):
         self.controller.reset()
@@ -74,8 +88,12 @@ class UnityGame:
 
     def new_episode(self):
         if self.controller == None:
-            tmp_dict = pickle.load(self.dataset).__dict__
+            if self.episode_counter == self.index.size:
+                raise ValueError("number of episodes in data set exceeded")
 
+            self.dataset.seek(self.index[self.episode_counter])
+            self.episode_counter += 1
+            tmp_dict = pickle.load(self.dataset).__dict__
             self.__dict__.update(tmp_dict) 
         else:
             self.episode_finished = False
