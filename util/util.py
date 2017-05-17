@@ -232,7 +232,7 @@ def optimistic_restore(session, save_file):
     saver = tf.train.Saver(restore_vars)
     saver.restore(session, save_file)
 
-def mape(a, f, eps=0.001):
+def map_error(a, f, eps=0.001):
     n = 1
     if isinstance(a, np.ndarray):
         a = np.ravel(a)
@@ -240,11 +240,23 @@ def mape(a, f, eps=0.001):
     if isinstance(f, np.ndarray):
         f = np.ravel(f)
 
-    m =  np.sum(abs((a - f)/(a+eps))) / n
-    return m
+    return np.sum(abs((a - f)/(a+eps))) / n
 
-def mape_accuracy(a, f, eps=0.001):
-    return 1 - mape(a, f, eps)
+def abs_error(a, f):
+    n = 1
+    if isinstance(a, np.ndarray):
+        a = np.ravel(a)
+        n = a.shape[0]
+    if isinstance(f, np.ndarray):
+        f = np.ravel(f)
+
+    return np.sum(abs((a - f))) / n
+
+def map_accuracy(a, f, eps=0.001):
+    return 1 - map_error(a, f, eps)
+
+def abs_accuracy(a, f):
+    return 1 - abs_error(a, f)
 
 def  as_vector(a, dim):
     if a.size != dim:
@@ -262,6 +274,12 @@ def  as_vector(a, dim):
 def as_scalar(a):
     return as_vector(a, 1)
 
-def process_frame(frame):
-    return frame.astype(float)/ 255.0
+def process_frame(frame, cls):
+    f =  frame.astype(float) - cls.mean()
+    return f
 
+def dataset_files(dataset):
+    idx_file = dataset + ".idx"
+    data_file = dataset + ".data"
+
+    return data_file, idx_file
