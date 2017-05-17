@@ -1,4 +1,5 @@
 from kaffe.tensorflow import Network
+import numpy as np
 
 class GoogleNet(Network):
     def setup(self):
@@ -183,12 +184,15 @@ class GoogleNet(Network):
                    'inception_5b_5x5', 
                    'inception_5b_pool_proj')
              .concat(3, name='inception_5b_output')
-             .avg_pool(7, 7, 1, 1, padding='VALID', name='pool5_7x7_s1')
-             .fc(1000, relu=False, name='loss3_classifier'))
+             .avg_pool(7, 7, 1, 1, padding='VALID', name='pool5_7x7_s1'))
+             # .fc(1000, relu=False, name='loss3_classifier'))
              # .softmax(name='prob'))
 
     def single_image():
-        returne True
+        return True
 
-    def weights_file_name(self):
-        return 'googlenet.npy' 
+    @staticmethod
+    def mean():
+def mean():
+        # These are the values originally used for training Googlenet
+        return np.array([[[102.9801, 115.9465, 122.7717]]])
