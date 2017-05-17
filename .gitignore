@@ -28,6 +28,9 @@ ExportedObj/
 *.pklz
 *.npy
 *.out
+*.data
+*.idx
+
 
 # Unity3D generated meta files
 *.pidb.meta
