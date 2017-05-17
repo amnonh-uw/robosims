@@ -12,7 +12,7 @@ def parse_args(argv):
     parser.add_argument('--server-config', type=str, default=None)
     parser.add_argument('--config', type=str, default=None)
     parser.add_argument('--iter', type=int, default=0)
-    parser.add_argument('--outer-iter', type=int, default=0)
+    parser.add_argument('--epochs', type=int, default=0)
     parser.add_argument('--test-only', dest='test_only', action='store_true')
     parser.add_argument('--dataset', type=str, default=None)
     parser.add_argument('--postfix', type=str, default=None)
@@ -23,7 +23,6 @@ def parse_args(argv):
     args.gen_dataset = False
     args.conf = config()
     if args.config != None:
-        print("loading config file")
         args.conf.load(args.config)
         if args.conf.postfix is None:
             args.conf.postfix = os.path.splitext(os.path.basename(args.config))[0]
@@ -31,8 +30,8 @@ def parse_args(argv):
     if args.conf.iter != 0:
         args.iter = args.conf.iter
 
-    if args.conf.outer_iter != 0:
-        args.outer_iter = args.conf.outer_iter
+    if args.conf.epochs != 0:
+        args.epochs = args.conf.epochs
 
     if args.dataset is None:
         args.dataset = args.conf.dataset
@@ -55,7 +54,7 @@ class config(EasyDict):
         self.cheat = False
         self.check_gradients = True
         self.iter = 0
-        self.outer_iter = 0
+        self.epochs = 0
         self.model_save_frequency = 100 # batches
         self.flush_plot_frequency = 20 # batches
         self.averages_period = 20 # batches
@@ -64,6 +63,7 @@ class config(EasyDict):
         self.allow_soft_placement = True
         self.colocate_gradients_with_ops = True
         self.use_adam = True
+        self.relative_errors = False
 
         # a3c
         self.num_workers = 1
@@ -114,7 +114,6 @@ class config(EasyDict):
         self.gif_fps = 20
         self.base_class = 'ResNet50'
         self.load_base_weights = False
-        # self.load_base_weights = False
 
         # loss
         self.error_clip_min = None
