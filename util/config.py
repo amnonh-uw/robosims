@@ -20,21 +20,46 @@ def parse_args(argv):
     parser.set_defaults(test_only=False)
 
     args = parser.parse_args(argv)
-    args.gen_dataset = False
     args.conf = config()
     if args.config != None:
         args.conf.load(args.config)
         if args.conf.postfix is None:
             args.conf.postfix = os.path.splitext(os.path.basename(args.config))[0]
 
-    if args.conf.iter != 0:
+    args.conf.server_config = args.server_config
+    args.conf.gen_dataset = False
+
+    if args.iter == 0 and args.conf.iter != 0:
         args.iter = args.conf.iter
+    else
+        args.conf.iter = args.iter
 
-    if args.conf.epochs != 0:
+    if args.epochs == 0 and args.conf.epochs != 0:
         args.epochs = args.conf.epochs
+    else:
+        args.conf.epochs = args.epochs
 
-    if args.dataset is None:
+    if args.dataset == None and args.conf.datasets != None:
         args.dataset = args.conf.dataset
+    else:
+        args.conf.dataset = args.dataset
+
+    if args.test_only:
+        if args.conf.epochs != 0 and args.conf.epochs != 1:
+            print('--test-only must have 1 epoch')
+            exit()
+        args.conf.epochs = 1
+
+        args.conf.test_only = True
+        if args.conf.iter == 0:
+            args.conf.test_iter = 100
+        else:
+            conf.test_iter = args.iter
+    else:
+        if args.conf.iter == 0:
+            args.conf.iter = 40000
+        if args.conf.epochs == 0:
+            args.conf.epochs = 10
 
     # if postfix is not set, create one if there is a config file
     if args.conf.postfix == None and args.config != None:
@@ -64,6 +89,9 @@ class config(EasyDict):
         self.colocate_gradients_with_ops = True
         self.use_adam = True
         self.relative_errors = False
+        self.verify_dataset = None
+        self.verify_iter = 0
+        self.verify_frequencey == 500000
 
         # a3c
         self.num_workers = 1
