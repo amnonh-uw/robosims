@@ -7,10 +7,10 @@ import numpy as np
 
 def gen_dataset(argv):
     args = parse_args(argv)
-    args.gen_dataset = True
     conf = args.conf
+    conf.gen_dataset = True
 
-    env = UnityGame(args)
+    env = UnityGame(conf)
     episode_count = 0
     
     if args.iter == 0:
