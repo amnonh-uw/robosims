@@ -52,6 +52,10 @@ def train_regression(args, model_cls):
         if args.load_model:
             print('Loading Model...')
             ckpt = tf.train.get_checkpoint_state(conf.model_path)
+            if ckpt == None:
+                print("No saved checkpoints found")
+                exit()
+
             saver.restore(sess,ckpt.model_checkpoint_path)
         else:
             sess.run(tf.global_variables_initializer())
@@ -65,32 +69,23 @@ def train_regression(args, model_cls):
             batch_count = 0
     
             if args.test_only:
-                if args.iter == 0:
-                    args.test_iter = 100
-                else:
-                    args.test_iter = args.iter
                 train_iter = 0
-                train_epochs = 0
+                epochs = 0
+                test_iter = conf.test_iter
             else:
                 plotter = LossAccPlotter(save_to_filepath=conf.frames_path + "/chart.png")
                 plotter.averages_period = conf.averages_period
 
-                if args.iter == 0:
-                    train_iter = 40000
-                else:
-                    train_iter = args.iter
-                if args.epochs == 0:
-                    train_epochs = 1
-                else:
-                    train_epochs = args.epochs
-                args.test_iter = 100
+                train_iter = conf.iter
+                epochs = conf.epochs
+
+                print("doing {}*{} training iterations".format(train_iter, epochs))
         
-            print("doing {}*{} training iterations".format(train_iter, train_epochs))
             env = None
             episodes_in_batch = 0
-            for epoch in range(0, train_epochs):
+            for epoch in range(0, epochs):
                 print("epoch {}".format(epoch))
-                env = UnityGame(args, num_iter=train_iter)
+                env = UnityGame(conf, num_iter=train_iter)
                 for i in range(0, train_iter):
                     env.new_episode()
                     episode_count += 1
@@ -172,14 +167,19 @@ def train_regression(args, model_cls):
                             saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                             print("Saved Model")
 
+
+                        if conf.verify_dataset and batch_count % conf.verify_frequencey == 0:
+                            err = verify(conf, sess, model, cls)
+                            print("error on verification set: {}".format(err))
+
                 if env != None and epoch != train_epochs - 1:
                     env.close()
                     env = None
-            if not args.test_only:
+
+            if epochs != 0:
                 plotter.redraw()
 
-            env = UnityGame(args, args.test_iter)
-            test(conf, sess, env, model, cls, args.test_iter)
+            test(conf, sess, model, cls)
 
         except KeyboardInterrupt:
             print("W: interrupt received, stopping…")
@@ -202,8 +202,24 @@ def predict(sess, t, s, model, cls):
     pred_value = sess.run(model.pred_tensor(), feed_dict=feed_dict)
     return pred_value
 
-def test(conf, sess, env, model, cls, test_iter):
+def verify_err(sess, t, s, model, cls):
+    t_input = np.expand_dims(process_frame(t, cls), axis=0)
+    s_input = np.expand_dims(process_frame(s, cls), axis=0)
+
+    feed_dict = {
+                model.phase_tensor(): 1,
+                model.network.s_input:s_input,
+                model.network.t_input:t_input }
+
+    errors = sess.run(model.error_tensor(), feed_dict=feed_dict)
+    return np.sum(errors) / errors.size
+
+def test(conf, sess, model, cls):
+    test_iter = conf.test_iter
+
     print("testing... {} iterations".format(test_iter))
+    env = UnityGame(conf, test_iter, randomize=False)
+
     for episode_count in range(0, test_iter):
         env.new_episode()
         t = env.get_state().target_buffer()
@@ -233,6 +249,21 @@ def test(conf, sess, env, model, cls, test_iter):
                 cap_texts2.append(err_str)
 
             make_jpg(conf, "test_set_steps_", images, cap_texts, cap_texts2, episode_count)
+
+    env.close()
+
+def verify(conf, sess, model, cls):
+    env = UnityGame(args, verify_iter, dataset = conf.verify_dataset, randomize=False)
+    total_error = 0
+
+    for episode_count in range(0, conf.verify_iter):
+        env.new_episode()
+        t = env.get_state().target_buffer()
+        s = env.get_state().source_buffer()
+        total_error += verify_err(sess, t, s,  model, cls)
+
+    env.close()
+    return total_error / conf.verify_iter
 
 def check_grad(sess, grads_and_vars, feed_dict):
     for gv in grads_and_vars:
