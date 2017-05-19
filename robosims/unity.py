@@ -13,6 +13,7 @@ class UnityGame:
             dataset = conf.dataset
 
         if dataset == None or conf.gen_dataset:
+            self.dataset = None
             self.controller = robosims.server.Controller(conf.server_config)
             self.controller.start(port, start_unity)
             self.get_structure_info()

@@ -5,6 +5,7 @@ import sys
 import queue
 import importlib
 import signal
+import traceback
 from robosims.unity import UnityGame
 from util.util import *
 from util.laplotter import *
@@ -179,13 +180,20 @@ def train_regression(args, model_cls):
             if epochs != 0:
                 plotter.redraw()
 
+<<<<<<< HEAD
             test(conf, sess, model, cls)
+=======
+            env = UnityGame(args, num_iter=args.test_iter)
+            test(conf, sess, env, model, cls, args.test_iter)
+>>>>>>> 41130844723f2e385d4c230e142301caf721efb5
 
         except KeyboardInterrupt:
             print("W: interrupt received, stopping…")
-            exit()
-        except (EOFError):
+        except EOFError:
             print("end of pickled file reached")
+        except Exception as e:
+            print('Exception {}'.format(e))
+            traceback.print_exc()
         finally:
             if env != None:
                 env.close()
@@ -236,13 +244,14 @@ def test(conf, sess, model, cls):
             make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count)
         else:
             for step in range(conf.test_steps):
+                pred_value = pred_value[0]
                 x = float(pred_value[0])
                 y = float(pred_value[1])
                 z = float(pred_value[2])
                 env.take_prediction_step(x, y,z)
                 image = env.get_state().source_buffer()
                 images.append(image)
-                pred_value = predict(sess, env, model)
+                pred_value = predict(sess, t, image, model, cls)
                 true_value = np.expand_dims(model.true_value(env), axis=0)
                 err_str = model.error_str(true_value, pred_value)
                 cap_texts.append("step {}:{}".format(step+1, env.source_str()))

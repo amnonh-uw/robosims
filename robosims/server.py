@@ -108,20 +108,27 @@ class Controller(object):
         xproto = xcffib.xproto.xprotoExtension(conn)
 
         def window_children():
-            return {(x - (x % 16)): x for x in xproto.QueryTree(screen.root).reply().children}
+            d = {}
+            for x in xproto.QueryTree(screen.root).reply().children:
+                d[x - (x % 16)] = x
+                # p = xproto.ListProperties(x).reply()
+                # print(p.__dict__)
+                # print(p.atoms)
+
+            return d
 
         return window_children
 
-    def find_xwindow_id(self, pid, wc):
+    def find_xwindow_id(self, pid, wc, pre_children):
 
         window_id = None
-        pre_children = wc()
         for i in range(100):
             time.sleep(0.2)
             if not process_alive(pid):
                 raise Exception("process died %s " % pid)
 
             post_children = wc()
+            print("len {} wc {}".format(len(post_children), post_children))
 
             diff = len(post_children) - len(pre_children)
             if diff < 0 or diff > 1:
@@ -161,14 +168,19 @@ class Controller(object):
 
         # launch simulator
         if start_unity:
+            linux = platform.system() == 'Linux'
+
+            if linux:
+                wc = self.setup_window_children(env['DISPLAY'])
+                pre_children = wc()
+                
             proc = subprocess.Popen(self.unity_command(config), env=env)
             self.pid = proc.pid
 
             print("launched pid %s" % self.pid)
-            if platform.system() == 'Linux':
+            if linux:
                 atexit.register(lambda: os.kill(self.pid, signal.SIGKILL))
-                wc = self.setup_window_children(env['DISPLAY'])
-                self.server.xwindow_id = self.find_xwindow_id(self.pid, wc)
+                self.server.xwindow_id = self.find_xwindow_id(self.pid, wc, pre_children)
                 self.server.window_children = wc
 
         self.server.start()

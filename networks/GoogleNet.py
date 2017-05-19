@@ -193,6 +193,18 @@ class GoogleNet(Network):
 
     @staticmethod
     def mean():
-def mean():
         # These are the values originally used for training Googlenet
         return np.array([[[102.9801, 115.9465, 122.7717]]])
+
+#def prep_image(im):
+    #MEAN_VALUES = np.array([104, 117, 123]).reshape((3,1,1))
+    #rawim = np.copy(im).astype('uint8')
+    
+    # Shuffle axes to c01
+    #im = np.swapaxes(np.swapaxes(im, 1, 2), 0, 1)
+    
+    # Convert to BGR
+    #im = im[::-1, :, :]
+
+    #im = im - MEAN_VALUES
+    #return rawim, floatX(im[np.newaxis])
