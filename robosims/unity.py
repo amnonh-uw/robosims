@@ -7,14 +7,13 @@ import pickle
 
 
 class UnityGame:
-    def __init__(self, args, port=0, start_unity = True, dataset=None, num_iter=0):
+    def __init__(self, conf, port=0, start_unity = True, dataset=None, num_iter=0, randomize=True):
         random.seed()
-        self.conf = args.conf
         if dataset is None:
-            dataset = args.dataset
+            dataset = conf.dataset
 
-        if dataset == None or args.gen_dataset:
-            self.controller = robosims.server.Controller(args.server_config)
+        if dataset == None or conf.gen_dataset:
+            self.controller = robosims.server.Controller(conf.server_config)
             self.controller.start(port, start_unity)
             self.get_structure_info()
         else:
@@ -24,7 +23,8 @@ class UnityGame:
                 self.index = pickle.load(idx)
                 if num_iter != 0:
                     self.index = self.index[:num_iter]
-                np.random.shuffle(self.index)
+                if randomize:
+                    np.random.shuffle(self.index)
                 self.episode_counter = 0
 
             self.dataset = open(data_file, "rb")
