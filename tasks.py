@@ -245,3 +245,9 @@ def gen_test_datasets(context, port=0, start_unity=True):
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/verify_50cm.yaml'])
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/verify_20cm.yaml'])
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/verify_1m.yaml'])
+
+@task
+def gen_rot_datasets(context, port=0, start_unity=True):
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm_rot20.yaml'])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm_rot20.yaml'])
+    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m_rot20.yaml'])
