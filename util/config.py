@@ -16,6 +16,8 @@ def parse_args(argv):
     parser.add_argument('--test-only', dest='test_only', action='store_true')
     parser.add_argument('--dataset', type=str, default=None)
     parser.add_argument('--postfix', type=str, default=None)
+    parser.add_argument('--image', type=str, default=None)
+    parser.add_argument('--base-class', type=str, default=None)
     parser.set_defaults(load_model=False)
     parser.set_defaults(test_only=False)
 
@@ -29,9 +31,12 @@ def parse_args(argv):
     args.conf.server_config = args.server_config
     args.conf.gen_dataset = False
 
+    if args.base_class != None:
+        args.conf.base_class = args.base_class
+
     if args.iter == 0 and args.conf.iter != 0:
         args.iter = args.conf.iter
-    else
+    else:
         args.conf.iter = args.iter
 
     if args.epochs == 0 and args.conf.epochs != 0:
@@ -39,7 +44,7 @@ def parse_args(argv):
     else:
         args.conf.epochs = args.epochs
 
-    if args.dataset == None and args.conf.datasets != None:
+    if args.dataset == None and args.conf.dataset != None:
         args.dataset = args.conf.dataset
     else:
         args.conf.dataset = args.dataset
@@ -66,8 +71,6 @@ def parse_args(argv):
         args.conf.postfix = re.sub('^.*/', '', re.sub('\.yaml$', '', args.config))
         print("defaulting to postfix {}".format(args.conf.postfix))
 
-    print(args.conf)
-
     return args
 
 class config(EasyDict):
@@ -91,7 +94,7 @@ class config(EasyDict):
         self.relative_errors = False
         self.verify_dataset = None
         self.verify_iter = 0
-        self.verify_frequencey == 500000
+        self.verify_frequencey = 500000
 
         # a3c
         self.num_workers = 1
