@@ -1,4 +1,6 @@
 from kaffe.tensorflow import Network
+import numpy as np
+import skimage.transform
 
 class ResNet50(Network):
     def setup(self):
@@ -198,9 +200,12 @@ class ResNet50(Network):
                    'bn5c_branch2c')
              .add(name='res5c')
              .relu(name='res5c_relu')
-             .avg_pool(7, 7, 1, 1, padding='VALID', name='pool5')
-             .fc(1000, relu=False, name='fc1000'))
-       #      .softmax(name='prob'))
+             .avg_pool(7, 7, 1, 1, padding='VALID', name='pool5'))
+        
+        if self.fixed_resolution:
+            (self.feed('pool5')
+                .fc(1000, relu=False, name='fc1000')
+                .softmax(name='prob'))
 
     def single_image():
         return True
@@ -210,3 +215,29 @@ class ResNet50(Network):
         # Pixel mean values (BGR order) as a (1, 1, 3) array
         # These are the values originally used for training RESNET50
         return np.array([[[102.9801, 115.9465, 122.7717]]])
+
+
+    @staticmethod
+    def preprocess_image(im, fixed_resolution=True):
+        # assumes RGB
+        if fixed_resolution:
+            im = np.copy(im).astype('uint8')
+            # Resize so smallest dim = 256, preserving aspect ratio
+            h, w, _ = im.shape
+            if h < w:
+                im = skimage.transform.resize(im, (256, int(w*256/h)), preserve_range=True)
+            else:
+                im = skimage.transform.resize(im, (int(h*256/w), 256), preserve_range=True)
+
+            # Central crop to 224x224
+            h, w, _ = im.shape
+            im = im[h//2-112:h//2+112, w//2-112:w//2+112]
+
+
+        # Convert to BGR
+        im = im[:, :, ::-1]
+
+        # substract mean
+        im = im - ResNet50.mean()
+
+        return im

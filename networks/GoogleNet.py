@@ -1,5 +1,6 @@
 from kaffe.tensorflow import Network
 import numpy as np
+import skimage.transform
 
 class GoogleNet(Network):
     def setup(self):
@@ -185,26 +186,42 @@ class GoogleNet(Network):
                    'inception_5b_pool_proj')
              .concat(3, name='inception_5b_output')
              .avg_pool(7, 7, 1, 1, padding='VALID', name='pool5_7x7_s1'))
-             # .fc(1000, relu=False, name='loss3_classifier'))
-             # .softmax(name='prob'))
+
+        if self.fixed_resolution:
+            (self.feed('pool5_7x7_s1')
+                .fc(1000, relu=False, name='loss3_classifier')
+                .softmax(name='prob'))
 
     def single_image():
         return True
 
     @staticmethod
     def mean():
-        # These are the values originally used for training Googlenet
-        return np.array([[[102.9801, 115.9465, 122.7717]]])
+        # Pixel mean values (RGB order) as a (1, 1, 3) array
+        return np.array([[123.68, 116.779, 103.939]])
 
-#def prep_image(im):
-    #MEAN_VALUES = np.array([104, 117, 123]).reshape((3,1,1))
-    #rawim = np.copy(im).astype('uint8')
-    
-    # Shuffle axes to c01
-    #im = np.swapaxes(np.swapaxes(im, 1, 2), 0, 1)
-    
-    # Convert to BGR
-    #im = im[::-1, :, :]
+    @staticmethod
+    def preprocess_image(im, fixed_resolution=True):
+        # assumes RGB
+        if fixed_resolution:
+            im = np.copy(im).astype('uint8')
+            # Resize so smallest dim = 256, preserving aspect ratio
+            h, w, _ = im.shape
+            if h < w:
+                im = skimage.transform.resize(im, (256, int(w*256/h)), preserve_range=True)
+            else:
+                im = skimage.transform.resize(im, (int(h*256/w), 256), preserve_range=True)
 
-    #im = im - MEAN_VALUES
-    #return rawim, floatX(im[np.newaxis])
+            # Central crop to 200x200
+            h, w, _ = im.shape
+            im = im[h//2-100:h//2+100, w//2-100:w//2+100]
+            im = im.astype(dtype=float)
+
+        im -= GoogleNet.mean()
+
+        # move to [-1,1]
+        #im /= 255.
+        #im -= 0.5
+        #im *= 2.
+
+        return im

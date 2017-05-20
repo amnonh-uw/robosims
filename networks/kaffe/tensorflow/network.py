@@ -31,7 +31,7 @@ def layer(op):
 
 class Network(object):
 
-    def __init__(self, inputs, phase, trainable=True):
+    def __init__(self, inputs, phase, trainable=True, fixed_resolution=False):
         # The input nodes for this network
         self.inputs = inputs
         # tensor telling us if we are training or testing (required for batch norm)
@@ -42,6 +42,8 @@ class Network(object):
         self.layers = dict(inputs)
         # If true, the resulting variables are set as trainable
         self.trainable = trainable
+        # if true, keep fully connected and softmax laters - network will not be resolution invariant
+        self.fixed_resolution = fixed_resolution
         # Switch variable for dropout
         self.use_dropout = tf.placeholder_with_default(tf.constant(1.0),
                                                        shape=[],
@@ -80,7 +82,7 @@ class Network(object):
                         if found:
                             session.run(var.assign(data))
                     except ValueError:
-                        print('{} {} = {}'.format(var_name, var_shape, data.shape))
+                        print('{} var shape {} vs data shape {}'.format(var_name, var_shape, data.shape))
                         print("value error on assign {}".format(var_name))
 
     def feed(self, *args):
@@ -236,7 +238,7 @@ class Network(object):
 
     @layer
     def softmax(self, input, name):
-        input_shape = map(lambda v: v.value, input.get_shape())
+        input_shape = list(map(lambda v: v.value, input.get_shape()))
         if len(input_shape) > 2:
             # For certain models (like NiN), the singleton spatial dimensions
             # need to be explicitly squeezed, since they're not broadcast-able
@@ -245,7 +247,7 @@ class Network(object):
                 input = tf.squeeze(input, squeeze_dims=[1, 2])
             else:
                 raise ValueError('Rank 2 tensor input expected for softmax!')
-        return tf.nn.softmax(input, name)
+        return tf.nn.softmax(input, name=name)
 
     @layer
     def batch_normalization(self, input, name, relu=False, decay=0.999, epsilon=1e-5):
