@@ -180,12 +180,7 @@ def train_regression(args, model_cls):
             if epochs != 0:
                 plotter.redraw()
 
-<<<<<<< HEAD
             test(conf, sess, model, cls)
-=======
-            env = UnityGame(args, num_iter=args.test_iter)
-            test(conf, sess, env, model, cls, args.test_iter)
->>>>>>> 41130844723f2e385d4c230e142301caf721efb5
 
         except KeyboardInterrupt:
             print("W: interrupt received, stopping…")
