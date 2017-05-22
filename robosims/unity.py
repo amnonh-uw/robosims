@@ -20,7 +20,7 @@ class UnityGame:
             self.get_structure_info()
         else:
             self.controller = None
-            data_file, idx_file  = self.dataset_files(args.dataset)
+            data_file, idx_file  = self.dataset_files(dataset)
             with open(idx_file, "rb") as idx:
                 self.index = pickle.load(idx)
                 if num_iter != 0:
@@ -30,6 +30,9 @@ class UnityGame:
                 self.episode_counter = 0
 
             self.dataset = open(data_file, "rb")
+            if self.dataset == None:
+                print("can't open {}".format(data_file))
+                raise ValueError("can't open " + data_file)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -109,6 +112,10 @@ class UnityGame:
             self.dataset.seek(self.index[self.episode_counter])
             self.episode_counter += 1
             tmp_dict = pickle.load(self.dataset).__dict__
+            tmp_dict.pop('conf', 0)
+            tmp_dict.pop('dataset', 0)
+            tmp_dict.pop('index', 0)
+            tmp_dict.pop('episode_counter', 0)
             self.__dict__.update(tmp_dict) 
         else:
             self.episode_finished = False

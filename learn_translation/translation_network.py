@@ -51,7 +51,7 @@ class Translation_Model:
         return(self.l2_loss)
 
     def true_value(self, env):
-        return(np.reshape(env.translation(pose_dims=self.pose_dims), [self.pose_dims]))
+        return(np.reshape(env.translation(dims=self.pose_dims), [self.pose_dims]))
 
     def cheat_value(self, env):
         return self.true_value(env)
