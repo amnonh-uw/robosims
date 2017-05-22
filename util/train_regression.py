@@ -72,7 +72,6 @@ def train_regression(args, model_cls):
             if args.test_only:
                 train_iter = 0
                 epochs = 0
-                test_iter = conf.test_iter
             else:
                 plotter = LossAccPlotter(save_to_filepath=conf.frames_path + "/chart.png")
                 plotter.averages_period = conf.averages_period
