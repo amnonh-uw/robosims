@@ -13,7 +13,6 @@ import json
 import tempfile
 import re
 from a3c.train import train as a3c_train
-from learn_distance.train import train as distance_network_train
 from learn_translation.train import train as translation_network_train
 from learn_class.train import train as class_network_train
 from gen_dataset.gen_dataset import gen_dataset
@@ -184,21 +183,6 @@ def train_a3c(context, port=0, start_unity=True):
     a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml', '--partial-load-model=model_translation/model-1500.cptk' ])
 
 @task
-def train_distance(context, port=0, start_unity=True, config="learn_distance/train.yaml"):
-    sys.path.append("./networks")
-    args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
-    args.append("--config=" + config)
-    print(args)
-    distance_network_train(args)
-
-@task
-def test_distance(context, port=0, start_unity=True, config="learn_distance/test.yaml"):
-    sys.path.append("./networks")
-    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
-    args.append("--config=" + config)
-    distance_network_train(args)
-
-@task
 def train_translation(context, port=0, start_unity=True, config="learn_translation/train.yaml"):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
@@ -213,7 +197,7 @@ def test_translation(context, port=0, start_unity=True, config="learn_translatio
     translation_network_train(args)
 
 @task
-def train_class(context, port=0, start_unity=True, config="learn_distance/train.yaml"):
+def train_class(context, port=0, start_unity=True, config="learn_translation/train.yaml"):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
     args.append("--config=" + config)
@@ -221,7 +205,7 @@ def train_class(context, port=0, start_unity=True, config="learn_distance/train.
     class_network_train(args)
 
 @task
-def test_class(context, port=0, start_unity=True, config="learn_distance/test.yaml"):
+def test_class(context, port=0, start_unity=True, config="learn_translation/test.yaml"):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
     args.append("--config=" + config)
