@@ -95,6 +95,7 @@ class config(EasyDict):
         self.verify_dataset = None
         self.verify_iter = 0
         self.verify_frequencey = 500000
+        self.pose_dims = 3
 
         # a3c
         self.num_workers = 1

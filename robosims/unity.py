@@ -60,9 +60,19 @@ class UnityGame:
         dist = math.sqrt(np.sum(np.square(delta)))
         return dist
 
-    def translation(self):
-        delta = np.asarray(self.t_pos) - np.asarray(self.s_pos)
-        return delta
+    def translation(self, dims=3):
+        delta_xyz = np.asarray(self.t_pos) - np.asarray(self.s_pos)
+        delta_pqr = np.asarray(self.t_rot) - np.asarray(self.s_rot)
+
+        if dims == 1:
+            return np.reshape(np.asarray(np.linalg.norm(delta_xyz)), [1])
+        if dims == 3:
+            return(delta_xyz)
+        if dims == 4:
+            return np.append(delta_xyz, delta_pqr[1])
+
+        raise ValueError("dim must be 1, 3 or 4")
+
 
     def get_class(self):
         delta = self.translation()
