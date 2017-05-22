@@ -173,7 +173,7 @@ def train_regression(args, model_cls):
                             err = verify(conf, sess, model, cls)
                             print("error on verification set: {}".format(err))
 
-                if env != None and epoch != train_epochs - 1:
+                if env != None and epoch != epochs - 1:
                     env.close()
                     env = None
 
