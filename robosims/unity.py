@@ -70,7 +70,13 @@ class UnityGame:
         if dims == 3:
             return(delta_xyz)
         if dims == 4:
-            return np.append(delta_xyz, delta_pqr[1])
+            # move r to [-1,1]
+            r = delta_pqr[1]
+            if r < 0:
+                r += 360
+            r -= 180.
+            r = r / 180.
+            return np.append(delta_xyz, r)
 
         raise ValueError("dim must be 1, 3 or 4")
 
