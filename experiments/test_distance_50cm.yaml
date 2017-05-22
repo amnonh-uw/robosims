@@ -3,3 +3,5 @@ postfix: distance_50cm
 dataset: test_50cm
 max_distance_delta: 0.5
 max_rotation_delta: 0
+pose_dims: 1
+pose_dims: 1

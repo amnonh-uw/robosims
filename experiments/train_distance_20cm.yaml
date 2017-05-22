@@ -3,3 +3,4 @@ postfix: distance_20cm
 dataset: 20cm
 max_distance_delta: 0.2
 max_rotation_delta: 0
+pose_dims: 1

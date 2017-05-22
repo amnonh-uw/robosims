@@ -6,18 +6,19 @@ from robosims.unity import UnityGame
 from util.util import *
 
 class Translation_Model:
-    def __init__(self, conf, cls, cheat=False, trainable=True):
+    def __init__(self, conf, cls, pose_dims = 3, cheat=False, trainable=True):
         self.relative_errors = conf.relative_errors
+        self.pose_dims = pose_dims
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
-            self.cheat_translation = tf.placeholder(tf.float32, shape=[None, 3], name='cheat_translation')
+            self.cheat_translation = tf.placeholder(tf.float32, shape=[None, self.pose_dims], name='cheat_translation')
         else:
             self.cheat_translation = None
 
-        self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat_translation, trainable=trainable)
+        self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat_translation, trainable=trainable, pose_dims=pose_dims)
         self.pred_translation = self.network.get_output()
 
-        self.translation = tf.placeholder(tf.float32, name='translation', shape=[None, 3])
+        self.translation = tf.placeholder(tf.float32, name='translation', shape=[None, self.pose_dims])
         self.error = self.pred_translation - self.translation
 
         if self.relative_errors:
@@ -50,7 +51,7 @@ class Translation_Model:
         return(self.l2_loss)
 
     def true_value(self, env):
-        return(np.reshape(env.translation(), [3]))
+        return(np.reshape(env.translation(pose_dims=self.pose_dims), [self.pose_dims]))
 
     def cheat_value(self, env):
         return self.true_value(env)
@@ -59,13 +60,13 @@ class Translation_Model:
         return self.cheat_translation
 
     def accuracy(self, true_translation, pred_translation):
-        a = np.zeros(3, dtype=np.float32)
+        a = np.zeros(self.pose_dims, dtype=np.float32)
 
         if self.relative_errors:
-            for i in range(0, 3):
+            for i in range(0, self.pose_dims):
                 a[i] = map_accuracy(true_translation[:,i], pred_translation[:,i])
         else:
-            for i in range(0, 3):
+            for i in range(0, self.pose_dims):
                 a[i] = abs_accuracy(true_translation[:,i], pred_translation[:,i])
 
         return(np.min(a))
@@ -75,7 +76,7 @@ class Translation_Model:
             raise ValueError("error_str excpects test_transaltion to be a vector")
 
         s = "pred_error "
-        for i in range(0,3):
+        for i in range(0,self.pose_dims):
             relative_err = map_error(true_translation[0,i], pred_translation[0,i])
             s += str(round(relative_err, 2) *100) + "% "
             absolute_err = abs_error(true_translation[0,i], pred_translation[0,i])
@@ -91,8 +92,9 @@ class Translation_Model:
         return "translation"
 
 class Translation_Network():
-    def __init__(self, conf, cls, scope, phase, cheat = None, trainable=True):
+    def __init__(self, conf, cls, scope, phase, cheat = None, trainable=True, pose_dims=3):
         self.scope = scope
+        self.pose_dims = pose_dims
 
         with tf.variable_scope(scope):
             #Input and visual encoding layers
@@ -122,7 +124,7 @@ class Translation_Network():
                     weights_initializer=normalized_columns_initializer(1.0),
                     biases_initializer=None, scope='hidden_vector')
 
-                self.translation_pred = slim.fully_connected(hidden,3,
+                self.translation_pred = slim.fully_connected(hidden,self.pose_dims,
                     activation_fn=None,
                     # activation_fn=tf.nn.elu,
                     weights_initializer=normalized_columns_initializer(1.0),
@@ -131,10 +133,10 @@ class Translation_Network():
                 self.net = cls({'image_data': self.s_input, 'image_data_pert' : self.t_input}, phase, trainable=trainable)
                 self.translation_pred = self.net.position_tensor()
                 if cheat is not None:
-                    zeros = tf.zeros([1,3])
+                    zeros = tf.zeros([1,self.pose_dims])
                     print("Translation network cheating....")
                     combined = tf.concat(values=[zeros, cheat], axis=1)
-                    self.translation_pred = slim.fully_connected(combined,3,
+                    self.translation_pred = slim.fully_connected(combined,self.pose_dims,
                         activation_fn=None,
                         weights_initializer=normalized_columns_initializer(1.0),
                          biases_initializer=None, scope='translation_pred')

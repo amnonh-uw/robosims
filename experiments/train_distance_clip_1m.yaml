@@ -5,3 +5,4 @@ max_distance_delta: 1.
 max_rotation_delta: 0
 loss_clip_min: 0.1
 loss_clip_max: 99.
+pose_dims: 1

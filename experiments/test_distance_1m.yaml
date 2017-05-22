@@ -3,3 +3,4 @@ postfix: distance_1m
 dataset: test_1m
 max_distance_delta: 1.
 max_rotation_delta: 0
+pose_dims: 1
