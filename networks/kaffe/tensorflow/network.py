@@ -66,12 +66,20 @@ class Network(object):
                 for param_name, data in iter(data_dict[op_name].items()):
                     try:
                         param_name_str = param_name.decode("utf-8")
+                        param_name_str = param_name_str.replace('variance', 'bn/moving_variance')
+                        param_name_str = param_name_str.replace('mean', 'bn/moving_mean')
+                        param_name_str = param_name_str.replace('scale', 'bn/gamma')
+                        param_name_str = param_name_str.replace('offset', 'bn/beta')
                         var = tf.get_variable(param_name_str)
                         var_name = var.name
                         var_shape = var.get_shape()
                         found = True
                     except ValueError:
                         if not ignore_missing:
+                            print('cannot find variable {}'.format(param_name_str))
+                            tvars = tf.trainable_variables()
+                            for v in tvars:
+                                print(v.name)
                             raise
                         else:
                             var_name = param_name_str
