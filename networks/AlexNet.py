@@ -15,7 +15,7 @@ class AlexNet(Network):
              .conv(3, 3, 384, 1, 1, group=2, name='conv4')
              .conv(3, 3, 256, 1, 1, group=2, name='conv5')
              .max_pool(3, 3, 2, 2, padding='VALID', name='pool5'))
-    
+
         if self.fixed_resolution:
             (self.feed('pool5')
                 .fc(4096, name='fc6')
@@ -47,7 +47,7 @@ class AlexNet(Network):
 
             # Central crop to 224x224
             h, w, _ = im.shape
-            im = im[h//2-112:h//2+112, w//2-112:w//2+112]
+            im = im[h//2-113:h//2+114, w//2-113:w//2+114]
 
 
         # Convert to BGR

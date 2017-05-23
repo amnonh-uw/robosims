@@ -1,35 +1,3 @@
-"""A class to generate plots for the results of applied loss functions and/or
-accuracy of models trained with machine learning methods.
-
-Example:
-    plotter = LossAccPlotter()
-    for epoch in range(100):
-        loss_train, acc_train = your_model.train()
-        loss_val, acc_val = your_model.validate()
-        plotter.add_values(epoch,
-                           loss_train=loss_train, acc_train=acc_train,
-                           loss_val=loss_val, acc_val=acc_val)
-    plotter.block()
-
-Example, no accuracy chart:
-    plotter = LossAccPlotter(show_acc_plot=False)
-    for epoch in range(100):
-        loss_train = your_model.train()
-        loss_val = your_model.validate()
-        plotter.add_values(epoch, loss_train=loss_train, loss_val=loss_val)
-    plotter.block()
-
-Example, update the validation line only every 10th epoch:
-    plotter = LossAccPlotter(show_acc_plot=False)
-    for epoch in range(100):
-        loss_train = your_model.train()
-        if epoch % 10 == 0:
-            loss_val = your_model.validate()
-        else:
-            loss_val = None
-        plotter.add_values(epoch, loss_train=loss_train, loss_val=loss_val)
-    plotter.block()
-"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -64,14 +32,14 @@ def ignore_nan_and_inf(value, label, x_index):
         return value
 
 class LossAccPlotter(object):
-    """Class to plot loss and accuracy charts (for training and validation data)."""
+    """Class to plot loss and error charts (for training and validation data)."""
     def __init__(self,
                  title=None,
                  save_to_filepath=None,
                  show_regressions=True,
                  show_averages=True,
                  show_loss_plot=True,
-                 show_acc_plot=True,
+                 show_err_plot=True,
                  show_plot_window=True,
                  x_label="Epoch"):
         """Constructs the plotter.
@@ -91,9 +59,9 @@ class LossAccPlotter(object):
                 epochs), change the instance variable "averages_period" to the new
                 integer value. (Default is True.)
             show_loss_plot: Whether to show the chart for the loss values. If
-                set to False, only the accuracy chart will be shown. (Default
+                set to False, only the error chart will be shown. (Default
                 is True.)
-            show_acc_plot: Whether to show the chart for the accuracy value. If
+            show_err_plot: Whether to show the chart for the error value. If
                 set to False, only the loss chart will be shown. (Default is True.)
             show_plot_window: Whether to show the plot in a window (True)
                 or hide it (False). Hiding it makes only sense if you
@@ -101,7 +69,7 @@ class LossAccPlotter(object):
             x_label: Label on the x-axes of the charts. Reasonable choices
                 would be: "Epoch", "Batch" or "Example". (Default is "Epoch".)
         """
-        assert show_loss_plot or show_acc_plot
+        assert show_loss_plot or show_err_plot
         assert save_to_filepath is not None or show_plot_window
 
         self.title = title
@@ -109,7 +77,7 @@ class LossAccPlotter(object):
         self.show_regressions = show_regressions
         self.show_averages = show_averages
         self.show_loss_plot = show_loss_plot
-        self.show_acc_plot = show_acc_plot
+        self.show_err_plot = show_err_plot
         self.show_plot_window = show_plot_window
         self.save_to_filepath = save_to_filepath
         self.x_label = x_label
@@ -147,12 +115,12 @@ class LossAccPlotter(object):
             "loss_val": "b-",
             "loss_val_sma": "b-",
             "loss_val_regression": "b:",
-            "acc_train": "r-",
-            "acc_train_sma": "r-",
-            "acc_train_regression": "r:",
-            "acc_val": "b-",
-            "acc_val_sma": "b-",
-            "acc_val_regression": "b:"
+            "err_train": "r-",
+            "err_train_sma": "r-",
+            "err_train_regression": "r:",
+            "err_val": "b-",
+            "err_val_sma": "b-",
+            "err_val_regression": "b:"
         }
         # different linestyles for the first epoch (if only one value is available),
         # because no line can then be drawn (needs 2+ points) and only symbols will
@@ -164,36 +132,36 @@ class LossAccPlotter(object):
         self.linestyles_one_value = {
             "loss_train": "rs-",
             "loss_val": "b^-",
-            "acc_train": "rs-",
-            "acc_val": "b^-"
+            "err_train": "rs-",
+            "err_val": "b^-"
         }
 
         # these values will be set in _initialize_plot() upon the first call
         # of redraw()
         # fig: the figure of the whole plot
         # ax_loss: loss chart (left)
-        # ax_acc: accuracy chart (right)
+        # ax_err: error chart (right)
         self.fig = None
         self.ax_loss = None
-        self.ax_acc = None
+        self.ax_err = None
 
         # dictionaries with x, y values for each line
         self.values_loss_train = OrderedDict()
         self.values_loss_val = OrderedDict()
-        self.values_acc_train = OrderedDict()
-        self.values_acc_val = OrderedDict()
+        self.values_err_train = OrderedDict()
+        self.values_err_val = OrderedDict()
 
-    def add_values(self, x_index, loss_train=None, loss_val=None, acc_train=None,
-                   acc_val=None, redraw=True):
+    def add_values(self, x_index, loss_train=None, loss_val=None, err_train=None,
+                   err_val=None, redraw=True):
         """Function to add new values for each line for a specific x-value (e.g.
         a specific epoch).
 
         Meaning of the values / lines:
          - loss_train: y-value of the loss function applied to the training set.
          - loss_val:   y-value of the loss function applied to the validation set.
-         - acc_train:  y-value of the accuracy (e.g. 0.0 to 1.0) when measured on
+         - err_train:  y-value of the error (e.g. 0.0 to 1.0) when measured on
                        the training set.
-         - acc_val:    y-value of the accuracy (e.g. 0.0 to 1.0) when measured on
+         - err_val:    y-value of the error (e.g. 0.0 to 1.0) when measured on
                        the validation set.
 
         Values that are None will be ignored.
@@ -212,9 +180,9 @@ class LossAccPlotter(object):
                 the given x_index. (Default is None.)
             loss_val: Same as loss_train for the loss validation line.
                 (Default is None.)
-            acc_train: Same as loss_train for the accuracy train line.
+            err_train: Same as loss_train for the error train line.
                 (Default is None.)
-            acc_val: Same as loss_train for the accuracy validation line.
+            err_val: Same as loss_train for the error validation line.
                 (Default is None.)
             redraw: Whether to redraw the plot immediatly after receiving the
                 new values. This is reasonable if you add values once at the end
@@ -226,17 +194,17 @@ class LossAccPlotter(object):
 
         loss_train = ignore_nan_and_inf(loss_train, "loss train", x_index)
         loss_val = ignore_nan_and_inf(loss_val, "loss val", x_index)
-        acc_train = ignore_nan_and_inf(acc_train, "acc train", x_index)
-        acc_val = ignore_nan_and_inf(acc_val, "acc val", x_index)
+        err_train = ignore_nan_and_inf(err_train, "err train", x_index)
+        err_val = ignore_nan_and_inf(err_val, "err val", x_index)
 
         if loss_train is not None:
             self.values_loss_train[x_index] = loss_train
         if loss_val is not None:
             self.values_loss_val[x_index] = loss_val
-        if acc_train is not None:
-            self.values_acc_train[x_index] = acc_train
-        if acc_val is not None:
-            self.values_acc_val[x_index] = acc_val
+        if err_train is not None:
+            self.values_err_train[x_index] = err_train
+        if err_val is not None:
+            self.values_err_val[x_index] = err_val
 
         if redraw:
             self.redraw()
@@ -268,20 +236,20 @@ class LossAccPlotter(object):
     def _initialize_plot(self):
         """Creates empty figure and axes of the plot and shows it in a new window.
         """
-        if self.show_loss_plot and self.show_acc_plot:
+        if self.show_loss_plot and self.show_err_plot:
             fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(24, 8))
             self.fig = fig
             self.ax_loss = ax1
-            self.ax_acc = ax2
+            self.ax_err = ax2
         else:
             fig, ax = plt.subplots(ncols=1, figsize=(12, 8))
             self.fig = fig
             self.ax_loss = ax if self.show_loss_plot else None
-            self.ax_acc = ax if self.show_acc_plot else None
+            self.ax_err = ax if self.show_err_plot else None
 
         # set_position is neccessary here in order to make space at the bottom
         # for the legend
-        for ax in [self.ax_loss, self.ax_acc]:
+        for ax in [self.ax_loss, self.ax_err]:
             if ax is not None:
                 box = ax.get_position()
                 ax.set_position([box.x0, box.y0 + box.height * 0.1,
@@ -308,11 +276,11 @@ class LossAccPlotter(object):
             epoch: The index of the current epoch, starting at 0.
             train_loss: All of the training loss values of each
                 epoch (list of floats).
-            train_acc: All of the training accuracy values of each
+            train_err: All of the training error values of each
                 epoch (list of floats).
             val_loss: All of the validation loss values of each
                 epoch (list of floats).
-            val_acc: All of the validation accuracy values of each
+            val_err: All of the validation error values of each
                 epoch (list of floats).
         """
         # initialize the plot if it's the first redraw
@@ -324,7 +292,7 @@ class LossAccPlotter(object):
 
         # shorter local variables
         ax1 = self.ax_loss
-        ax2 = self.ax_acc
+        ax2 = self.ax_err
 
         # set chart titles, x-/y-labels and grid
         for ax, label in zip([ax1, ax2], ["Loss", "Accuracy"]):
@@ -358,7 +326,7 @@ class LossAccPlotter(object):
                        bbox_to_anchor=(0.5, -0.08),
                        ncol=ncol)
         if ax2:
-            ax2.legend([label.replace("$CHART", "acc.") for label in labels],
+            ax2.legend([label.replace("$CHART", "err.") for label in labels],
                        loc="upper center",
                        bbox_to_anchor=(0.5, -0.08),
                        ncol=ncol)
@@ -370,14 +338,14 @@ class LossAccPlotter(object):
             self.save_plot(self.save_to_filepath)
 
     def _redraw_main_lines(self):
-        """Draw the main lines of values (i.e. loss train, loss val, acc train, acc val).
+        """Draw the main lines of values (i.e. loss train, loss val, err train, err val).
 
         Returns:
             List of handles (one per line).
         """
         handles = []
         ax1 = self.ax_loss
-        ax2 = self.ax_acc
+        ax2 = self.ax_err
 
         # Set the styles of the lines used in the charts
         # Different line style for epochs after the first one, because
@@ -385,16 +353,16 @@ class LossAccPlotter(object):
         # and would be invisible without the changed style.
         ls_loss_train = self.linestyles["loss_train"]
         ls_loss_val = self.linestyles["loss_val"]
-        ls_acc_train = self.linestyles["acc_train"]
-        ls_acc_val = self.linestyles["acc_val"]
+        ls_err_train = self.linestyles["err_train"]
+        ls_err_val = self.linestyles["err_val"]
         if len(self.values_loss_train) == 1:
             ls_loss_train = self.linestyles_one_value["loss_train"]
         if len(self.values_loss_val) == 1:
             ls_loss_val = self.linestyles_one_value["loss_val"]
-        if len(self.values_acc_train) == 1:
-            ls_acc_train = self.linestyles_one_value["acc_train"]
-        if len(self.values_acc_val) == 1:
-            ls_acc_val = self.linestyles_one_value["acc_val"]
+        if len(self.values_err_train) == 1:
+            ls_err_train = self.linestyles_one_value["err_train"]
+        if len(self.values_err_val) == 1:
+            ls_err_val = self.linestyles_one_value["err_val"]
 
         # Plot the lines
         alpha_main = self.alpha_thin if self.show_averages else self.alpha_thick
@@ -405,10 +373,10 @@ class LossAccPlotter(object):
                              ls_loss_val, label="loss val.", alpha=alpha_main)
             handles.extend([h_lt, h_lv])
         if ax2:
-            h_at, = ax2.plot(list(self.values_acc_train.keys()), list(self.values_acc_train.values()),
-                             ls_acc_train, label="acc. train", alpha=alpha_main)
-            h_av, = ax2.plot(list(self.values_acc_val.keys()), list(self.values_acc_val.values()),
-                             ls_acc_val, label="acc. val.", alpha=alpha_main)
+            h_at, = ax2.plot(list(self.values_err_train.keys()), list(self.values_err_train.values()),
+                             ls_err_train, label="err. train", alpha=alpha_main)
+            h_av, = ax2.plot(list(self.values_err_val.keys()), list(self.values_err_val.values()),
+                             ls_err_val, label="err. val.", alpha=alpha_main)
             handles.extend([h_at, h_av])
 
         return handles
@@ -428,7 +396,7 @@ class LossAccPlotter(object):
 
         handles = []
         ax1 = self.ax_loss
-        ax2 = self.ax_acc
+        ax2 = self.ax_err
 
         # calculate the xy-values
         if ax1:
@@ -438,11 +406,11 @@ class LossAccPlotter(object):
             (lv_sma_x, lv_sma_y) = self._calc_sma(list(self.values_loss_val.keys()),
                                                   list(self.values_loss_val.values()))
         if ax2:
-            # for accuracy chart
-            (at_sma_x, at_sma_y) = self._calc_sma(list(self.values_acc_train.keys()),
-                                                  list(self.values_acc_train.values()))
-            (av_sma_x, av_sma_y) = self._calc_sma(list(self.values_acc_val.keys()),
-                                                  list(self.values_acc_val.values()))
+            # for error chart
+            (at_sma_x, at_sma_y) = self._calc_sma(list(self.values_err_train.keys()),
+                                                  list(self.values_err_train.values()))
+            (av_sma_x, av_sma_y) = self._calc_sma(list(self.values_err_val.keys()),
+                                                  list(self.values_err_val.values()))
 
         # plot the xy-values
         alpha_sma = self.alpha_thick
@@ -456,12 +424,12 @@ class LossAccPlotter(object):
                              alpha=alpha_sma)
             handles.extend([h_lt, h_lv])
         if ax2:
-            # for accuracy chart
-            h_at, = ax2.plot(at_sma_x, at_sma_y, self.linestyles["acc_train_sma"],
-                             label="train acc (avg %d)" % (self.averages_period,),
+            # for error chart
+            h_at, = ax2.plot(at_sma_x, at_sma_y, self.linestyles["err_train_sma"],
+                             label="train err (avg %d)" % (self.averages_period,),
                              alpha=alpha_sma)
-            h_av, = ax2.plot(av_sma_x, av_sma_y, self.linestyles["acc_val_sma"],
-                             label="acc. val. (avg %d)" % (self.averages_period,),
+            h_av, = ax2.plot(av_sma_x, av_sma_y, self.linestyles["err_val_sma"],
+                             label="err. val. (avg %d)" % (self.averages_period,),
                              alpha=alpha_sma)
             handles.extend([h_at, h_av])
 
@@ -482,23 +450,23 @@ class LossAccPlotter(object):
 
         handles = []
         ax1 = self.ax_loss
-        ax2 = self.ax_acc
+        ax2 = self.ax_err
 
         # calculate future values for loss train (lt), loss val (lv),
-        # acc train (at) and acc val (av)
+        # err train (at) and err val (av)
         if ax1:
             # for loss chart
             lt_regression = self._calc_regression(list(self.values_loss_train.keys()),
                                                   list(self.values_loss_train.values()))
             lv_regression = self._calc_regression(list(self.values_loss_val.keys()),
                                                   list(self.values_loss_val.values()))
-        # predicting accuracy values isnt necessary if theres no acc chart
+        # predicting error values isnt necessary if theres no err chart
         if ax2:
-            # for accuracy chart
-            at_regression = self._calc_regression(list(self.values_acc_train.keys()),
-                                                  list(self.values_acc_train.values()))
-            av_regression = self._calc_regression(list(self.values_acc_val.keys()),
-                                                  list(self.values_acc_val.values()))
+            # for error chart
+            at_regression = self._calc_regression(list(self.values_err_train.keys()),
+                                                  list(self.values_err_train.values()))
+            av_regression = self._calc_regression(list(self.values_err_val.keys()),
+                                                  list(self.values_err_val.values()))
 
         # plot the predicted values
         alpha_regression = self.alpha_thick
@@ -514,14 +482,14 @@ class LossAccPlotter(object):
                              alpha=alpha_regression)
             handles.extend([h_lt, h_lv])
         if ax2:
-            # for accuracy chart
+            # for error chart
             h_at, = ax2.plot(at_regression[0], at_regression[1],
-                             self.linestyles["acc_train_regression"],
-                             label="acc train regression",
+                             self.linestyles["err_train_regression"],
+                             label="err train regression",
                              alpha=alpha_regression)
             h_av, = ax2.plot(av_regression[0], av_regression[1],
-                             self.linestyles["acc_val_regression"],
-                             label="acc val. regression",
+                             self.linestyles["err_val_regression"],
+                             label="err val. regression",
                              alpha=alpha_regression)
             handles.extend([h_at, h_av])
 

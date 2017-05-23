@@ -6,6 +6,20 @@ from robosims.actions import *
 import pickle
 
 
+class DatasetInfo:
+    def __init__(self, conf):
+        self.max_distance_delta = conf.max_distance_delta
+        self.max_rotation_delta = conf.max_distance_delta
+
+    def check(self, conf):
+        if self.max_distance_delta != conf.max_distance_delta:
+            raise ValueError("max_distance_delta {} inconsistent with index {}".
+                            format(conf.max_distance_delta, self.max_distance_delta))
+        
+        if self.max_rotation_delta != conf.max_distance_delta:
+            raise ValueError("max_rotation_delta {} inconsistent with index {}".
+                            format(conf.max_rotation_delta, self.max_rotation_delta))
+
 class UnityGame:
     def __init__(self, conf, port=0, start_unity = True, dataset=None, num_iter=0, randomize=True):
         self.conf = conf
@@ -24,7 +38,15 @@ class UnityGame:
             with open(idx_file, "rb") as idx:
                 self.index = pickle.load(idx)
                 if num_iter != 0:
+                    if num_iter >=self.index.size:
+                            raise ValueError("num_iter {} inconsistent with index size {}".
+                                format(num_iter, self.index.size))
+
                     self.index = self.index[:num_iter]
+
+                    dataset_info = pickle.load(idx)
+                    dataset_info.check(conf)
+
                 if randomize:
                     np.random.shuffle(self.index)
                 self.episode_counter = 0
@@ -33,6 +55,13 @@ class UnityGame:
             if self.dataset == None:
                 print("can't open {}".format(data_file))
                 raise ValueError("can't open " + data_file)
+
+    @staticmethod
+    def remove_private_members(tmp_dict):
+        tmp_dict.pop('conf', 0)
+        tmp_dict.pop('dataset', 0)
+        tmp_dict.pop('index', 0)
+        tmp_dict.pop('episode_counter', 0)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -80,6 +109,14 @@ class UnityGame:
 
         raise ValueError("dim must be 1, 3 or 4")
 
+    def recalibrate(self, poses, dims=3):
+        # switch r back from [-1,1]
+        if dims == 4:
+            for i in range(poses.shape[0]):
+                poses[i, 3] *= self.conf.max_rotation_delta
+
+        return poses
+
 
     def get_class(self):
         delta = self.translation()
@@ -112,10 +149,7 @@ class UnityGame:
             self.dataset.seek(self.index[self.episode_counter])
             self.episode_counter += 1
             tmp_dict = pickle.load(self.dataset).__dict__
-            tmp_dict.pop('conf', 0)
-            tmp_dict.pop('dataset', 0)
-            tmp_dict.pop('index', 0)
-            tmp_dict.pop('episode_counter', 0)
+            self.remove_private_members(tmp_dict)
             self.__dict__.update(tmp_dict) 
         else:
             self.episode_finished = False
@@ -143,8 +177,21 @@ class UnityGame:
         self.extract_source_pose()
         return event
 
-    def take_prediction_step(self, x, y, z):
+    def take_prediction_step(self, pred):
+        x = y = z = r = 0
+        dims = steps.shape[0]
+        step = step[0]
+        x = step[0]
+        if dims > 1:
+            y = step[1]
+        if dims > 2:
+            z = step[2]
+        if dims > 3:
+            r = step[3]
         event = self.take_add_position_action(x, y, z)
+        if r != 0:
+            event = self.take_add_rotation_action(0, r, 0)
+        
         self.s_frame = event.frame
 
     def take_add_position_action(self, x, y, z):

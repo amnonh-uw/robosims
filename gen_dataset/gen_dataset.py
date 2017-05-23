@@ -35,8 +35,10 @@ def gen_dataset(argv):
             index[i] = data.tell()
             pickle.dump(env, data, pickle.HIGHEST_PROTOCOL)
 
+    dataset_info = DatasetInfo(conf)
     with open(idx_file, 'wb') as idx:
         pickle.dump(index, idx, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(dataset_info, idx, pickle.HIGHEST_PROTOCOL)
         
 if __name__ == "__main__":
     gen_dataset(sys.argv[1:])

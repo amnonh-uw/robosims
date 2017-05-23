@@ -88,7 +88,7 @@ class Translation_Model:
             if i != 2:
                 s += ','
 
-        return s
+        return s, False
 
     def name(self):
         return "translation"
