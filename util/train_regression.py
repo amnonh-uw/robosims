@@ -220,7 +220,7 @@ def test(conf, sess, model, cls):
     test_iter = conf.test_iter
 
     print("testing... {} iterations".format(test_iter))
-    env = UnityGame(conf, test_iter, randomize=False)
+    env = UnityGame(conf, num_iter=test_iter, randomize=False)
 
     for episode_count in range(0, test_iter):
         env.new_episode()
