@@ -372,7 +372,7 @@ class UnityGame:
             self.s_frame = self.s.frame
             break
 
-        print("new episode {}{}-{}{}".format(self.s_pos, self.s_rot, self.t_pos, self.t_rot))
+        # print("new episode {}{}-{}{}".format(self.s_pos, self.s_rot, self.t_pos, self.t_rot))
 
     def extract_position(self, p):
         return (self.grid_round(p['x'], self.conf.grid_distance),
