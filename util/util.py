@@ -58,7 +58,7 @@ def make_image(images, cap_texts = None, cap_texts2=None, highlight = False):
 
     image0 = images[0]
 
-    font = ImageFont.load_default()
+    font = get_font(16)
     image0_draw = ImageDraw.Draw(image0)
     _, text_height = image0_draw.textsize("Hello", font=font)
     caption_height = text_height * 2 + 3 * text_height_margin
@@ -287,3 +287,12 @@ def dataset_files(dataset):
     data_file = dataset + ".data"
 
     return data_file, idx_file
+
+def get_font(fontsize):
+    try:
+        font = ImageFont.truetype("fonts/Menlo-Regular.ttf", fontsize)
+    except OSError:
+        font = ImageFont.load_default()
+
+    return font
+

@@ -75,11 +75,17 @@ class Translation_Model:
         if true_translation.shape[0] != 1:
             raise ValueError("error_str excpects test_transaltion to be a vector")
 
+        highlight = False
         s = "pred_error "
         for i in range(0,self.pose_dims):
             relative_err = map_error(true_translation[0,i], pred_translation[0,i])
-            s += str(round(relative_err, 2) *100) + "% "
             absolute_err = abs_error(true_translation[0,i], pred_translation[0,i])
+
+            if absolute_err > conf.highlight_absolute_error:
+                if relative_err > conf.highlight_relative_error:
+                    highlight = True
+
+            s += str(round(relative_err, 2) *100) + "% "
             s += '('
             s += str(round(absolute_err, 2))
             s += "/"

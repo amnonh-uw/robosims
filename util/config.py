@@ -97,6 +97,9 @@ class config(EasyDict):
         self.verify_iter = 0
         self.verify_frequencey = 500000
         self.pose_dims = 3
+        self.highlight_absolute_error = 0.1
+        self.highlight_relative_error = 0.25
+
 
         # a3c
         self.num_workers = 1
