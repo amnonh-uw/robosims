@@ -2,7 +2,7 @@ learning_rate: 1.e-5
 postfix: translation_1m_4d
 dataset: 1m_20deg
 max_distance_delta: 1.
-max_rotation_delta: 20
+max_rotation_delta: 20.
 pose_dims: 4
 cheat: no
 base_class: vgg16
