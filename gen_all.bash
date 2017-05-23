@@ -6,7 +6,7 @@ x=$1
 
 for i in gen_dataset/*.yaml
 do
-    invoke gen_dataset --config=$" >>& gen_dataset.log
+    invoke gen_train_dataset --config=$i &>> gen_dataset.out
     dataset=`fgrep dataset $i | awk '{ print $2 }'`
     mv $dataset.data $x
     mv $dataset.idx $x
