@@ -1,4 +1,4 @@
-from robosims.unity import UnityGame
+from robosims.unity import UnityGame, DatasetInfo
 from util.util import *
 from util.config import *
 import pickle
