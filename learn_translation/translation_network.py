@@ -80,9 +80,11 @@ class Translation_Model:
             relative_err = map_error(true_translation[0,i], pred_translation[0,i])
             s += str(round(relative_err, 2) *100) + "% "
             absolute_err = abs_error(true_translation[0,i], pred_translation[0,i])
+            s += '('
             s += str(round(absolute_err, 2))
-            s += " from "
+            s += "/"
             s += str(round(true_translation[0,i], 2))
+            s += ')'
             if i != 2:
                 s += ','
 
