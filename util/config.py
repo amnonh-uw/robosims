@@ -82,6 +82,7 @@ class config(EasyDict):
         self.cheat = False
         self.check_gradients = True
         self.iter = 0
+        self.test_iter = 100
         self.epochs = 0
         self.model_save_frequency = 100 # batches
         self.flush_plot_frequency = 20 # batches
