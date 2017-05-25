@@ -295,7 +295,7 @@ class LossAccPlotter(object):
         ax2 = self.ax_err
 
         # set chart titles, x-/y-labels and grid
-        for ax, label in zip([ax1, ax2], ["Loss", "Accuracy"]):
+        for ax, label in zip([ax1, ax2], ["Loss", "Error"]):
             if ax:
                 ax.clear()
                 ax.set_title(label)
