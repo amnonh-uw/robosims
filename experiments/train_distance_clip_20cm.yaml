@@ -1,8 +1,0 @@
-learning_rate: 1.e-4
-postfix: distance_clip_20cm
-dataset: 20cm
-max_distance_delta: 0.2
-max_rotation_delta: 0
-loss_clip_min: 0.1
-loss_clip_max: 99.
-pose_dims: 1

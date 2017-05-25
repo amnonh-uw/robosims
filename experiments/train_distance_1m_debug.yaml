@@ -1,6 +1,0 @@
-learning_rate: 1.e-4
-postfix: distance_1m_debug
-dataset: 1m
-max_distance_delta: 1.
-max_rotation_delta: 0
-pose_dims: 1
