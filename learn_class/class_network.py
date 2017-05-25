@@ -7,12 +7,14 @@ from util.util import *
 
 class Class_Model:
     def __init__(self, conf, cls, cheat=False, trainable=False):
+        self.relative_errors = conf.relative_errors
+        self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
             self.cheat_class = tf.placeholder(tf.float32, shape=[None, 1], name='cheat_class')
         else:
             self.cheat_class = None
 
-        self.network = Class_Network(conf, cls, "main", self.cheat_class, trainable=trainable)
+        self.network = Class_Network(conf, cls, "main", self.phase, self.cheat_class, trainable=trainable)
         self.pred_logits = self.network.get_logits()
         self.pred_softmax = self.network.get_softmax()
 
@@ -20,17 +22,23 @@ class Class_Model:
         self.label = tf.placeholder(tf.int32, name='label', shape=[None, 1])
         label_vec = tf.reshape(self.label, [-1])
 
-        self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label_vec,
+        self.error = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label_vec,
                 logits=self.pred_logits, name='loss')
 
-        variable_summaries(tf.reshape(self.loss, []))
-        self.summary = tf.summary.merge_all()
+        self.loss = self.error
+
 
     def summary_tensor(self):
         return self.summary
 
+    def phase_tensor(self):
+        return(self.phase)
+
     def pred_tensor(self):
         return self.pred_softmax
+
+    def error_tensor(self):
+        return(self.error)
 
     def true_tensor(self):
         return(self.label)
@@ -64,7 +72,7 @@ class Class_Model:
         return "class"
 
 class Class_Network:
-    def __init__(self, conf, cls, scope, cheat = None, trainable=False):
+    def __init__(self, conf, cls, scope, phase, cheat = None, trainable=False):
         self.scope = scope
 
         with tf.variable_scope(scope):
@@ -74,7 +82,7 @@ class Class_Network:
             self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
 
             with tf.variable_scope("siamese_network"):
-                self.source_net = cls({'data': self.s_input}, trainable=trainable)
+                self.source_net = cls({'data': self.s_input}, phase, trainable=trainable)
 
             with tf.variable_scope("siamese_network", reuse=True):
                 self.target_net = cls({'data': self.t_input}, trainable=trainable)
