@@ -107,7 +107,7 @@ def make_image(images, cap_texts = None, cap_texts2=None, highlight = False):
 
     width_start = text_width_margin
     for i in range(len(images)):
-        if hightlight:
+        if highlight:
             fill = "red"
         else:
             fill = "white"

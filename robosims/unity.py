@@ -438,10 +438,14 @@ class UnityGame:
         return self.grid_round(g, grid)
 
     def source_str(self):
-        return str(self.s_pos) + str(self.s_rot)
+        s = self.s_pos
+        s = s + (self.s_rot[1],)
+        return str(s)
 
     def target_str(self):
-        return str(self.t_pos) + str(self.t_rot)
+        t = self.t_pos
+        t = t + (self.t_rot[1],)
+        return str(t)
 
 class UnityState:
     def __init__(self, s_frame, t_frame, collision):

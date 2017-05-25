@@ -146,15 +146,15 @@ def train_regression(args, model_cls):
                     summary_writer.add_summary(summary, batch_count)
 
                     err = np.sum(errors) / errors.size
-                    acc_train = 1 - err
+                    err_train = 1 - err
                     loss = loss / conf.batch_size
                     loss_train = loss 
-                    if abs(acc_train) > 2:
-                        acc_train = None
+                    if abs(err_train) > 2:
+                        err_train = None
                     if abs(loss_train) > 2:
                         loss_train = None
 
-                    plotter.add_values(batch_count, loss_train=loss_train, acc_train=acc_train, redraw=False)
+                    plotter.add_values(batch_count, loss_train=loss_train, err_train=err_train, redraw=False)
 
                     # Periodically save gifs of episodes, model parameters, and summary statistics.
                     if batch_count != 0:
@@ -228,14 +228,16 @@ def test(conf, sess, model, cls):
         s = env.get_state().source_buffer()
         pred_value = predict(sess, t, s,  model, cls)
         true_value = np.expand_dims(model.true_value(env), axis=0)
+        highlight = False
 
         images = [t, s]
-        err_str = model.error_str(true_value, pred_value)
+        err_str, h = model.error_str(true_value, pred_value)
+        highlight = highlight or h
         cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
         cap_texts2 = [ err_str, "" ]
 
         if conf.test_steps == 0:
-            make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count)
+            make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count, highlight = highlight)
         else:
             for step in range(conf.test_steps):
                 pred_value = pred_value[0]
@@ -247,11 +249,12 @@ def test(conf, sess, model, cls):
                 images.append(image)
                 pred_value = predict(sess, t, image, model, cls)
                 true_value = np.expand_dims(model.true_value(env), axis=0)
-                err_str = model.error_str(true_value, pred_value)
+                err_str, h = model.error_str(true_value, pred_value)
+                highlight = highlight or h
                 cap_texts.append("step {}:{}".format(step+1, env.source_str()))
                 cap_texts2.append(err_str)
 
-            make_jpg(conf, "test_set_steps_", images, cap_texts, cap_texts2, episode_count)
+            make_jpg(conf, "test_set_steps_", images, cap_texts, cap_texts2, episode_count, highlight = highlight)
 
     env.close()
 

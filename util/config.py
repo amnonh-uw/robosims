@@ -87,7 +87,7 @@ class config(EasyDict):
         self.model_save_frequency = 100 # batches
         self.flush_plot_frequency = 20 # batches
         self.averages_period = 20 # batches
-        self.batch_size = 64
+        self.batch_size = 32
         self.log_device_placement = False
         self.allow_soft_placement = True
         self.colocate_gradients_with_ops = True
@@ -148,7 +148,7 @@ class config(EasyDict):
 
         # gif
         self.gif_fps = 20
-        self.base_class = 'ResNet50'
+        self.base_class = 'vgg16'
         self.load_base_weights = False
 
         # loss

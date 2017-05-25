@@ -9,6 +9,9 @@ class Translation_Model:
     def __init__(self, conf, cls, pose_dims = 3, cheat=False, trainable=True):
         self.relative_errors = conf.relative_errors
         self.pose_dims = pose_dims
+        self.highlight_absolute_error = conf.highlight_absolute_error
+        self.highlight_relative_error = conf.highlight_relative_error
+        self.phase = tf.placeholder(tf.bool, name='phase')
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
             self.cheat_translation = tf.placeholder(tf.float32, shape=[None, self.pose_dims], name='cheat_translation')
@@ -81,8 +84,8 @@ class Translation_Model:
             relative_err = map_error(true_translation[0,i], pred_translation[0,i])
             absolute_err = abs_error(true_translation[0,i], pred_translation[0,i])
 
-            if absolute_err > conf.highlight_absolute_error:
-                if relative_err > conf.highlight_relative_error:
+            if absolute_err > self.highlight_absolute_error:
+                if relative_err > self.highlight_relative_error:
                     highlight = True
 
             s += str(round(relative_err, 2) *100) + "% "
@@ -94,7 +97,7 @@ class Translation_Model:
             if i != 2:
                 s += ','
 
-        return s, False
+        return s, highlight
 
     def name(self):
         return "translation"
