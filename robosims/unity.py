@@ -124,7 +124,7 @@ class UnityGame:
         if delta[cls] < 0:
             cls += 3
 
-        return cls
+        return int(cls)
         
     def one_close_enough(self, a, b, dist):
         return abs(a-b) < dist
