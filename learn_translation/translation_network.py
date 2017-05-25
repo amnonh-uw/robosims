@@ -6,12 +6,11 @@ from robosims.unity import UnityGame
 from util.util import *
 
 class Translation_Model:
-    def __init__(self, conf, cls, pose_dims = 3, cheat=False, trainable=True):
+    def __init__(self, conf, cls, cheat=False, trainable=True):
         self.relative_errors = conf.relative_errors
-        self.pose_dims = pose_dims
+        self.pose_dims = conf.pose_dims
         self.highlight_absolute_error = conf.highlight_absolute_error
         self.highlight_relative_error = conf.highlight_relative_error
-        self.phase = tf.placeholder(tf.bool, name='phase')
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
             self.cheat_translation = tf.placeholder(tf.float32, shape=[None, self.pose_dims], name='cheat_translation')
