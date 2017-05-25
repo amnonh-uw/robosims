@@ -3,4 +3,3 @@ postfix: translation_1m
 dataset: 1m
 max_distance_delta: 1.
 max_rotation_delta: 0
-cheat: 
