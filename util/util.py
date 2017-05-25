@@ -289,9 +289,11 @@ def dataset_files(dataset):
     return data_file, idx_file
 
 def get_font(fontsize):
+    fontfile = "fonts/Menlo-Regular.ttf"
     try:
-        font = ImageFont.truetype("fonts/Menlo-Regular.ttf", fontsize)
+        font = ImageFont.truetype(fontfile, fontsize)
     except OSError:
+        print("cannot load {}, using default font".format(fontfile))
         font = ImageFont.load_default()
 
     return font
