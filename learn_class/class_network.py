@@ -6,7 +6,7 @@ from robosims.unity import UnityGame
 from util.util import *
 
 class Class_Model:
-    def __init__(self, conf, cls, cheat=False, trainable=False):
+    def __init__(self, conf, cls, cheat=False, trainable=True):
         self.relative_errors = conf.relative_errors
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
@@ -17,16 +17,17 @@ class Class_Model:
         self.network = Class_Network(conf, cls, "main", self.phase, self.cheat_class, trainable=trainable)
         self.pred_logits = self.network.get_logits()
         self.pred_softmax = self.network.get_softmax()
+        self.pred_class = tf.to_int32(tf.argmax(self.pred_softmax, axis=1))
 
-        # cross entropy error
+        # cross entropy loss and classifcation error
         self.label = tf.placeholder(tf.int32, name='label', shape=[None, 1])
-        label_vec = tf.reshape(self.label, [-1])
+        self.error = tf.not_equal(self.pred_class, self.label)
 
-        self.error = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label_vec,
-                logits=self.pred_logits, name='loss')
+        self.loss = tf.losses.sparse_softmax_cross_entropy(tf.reshape(self.label,[-1]),
+                logits=self.pred_logits, scope='loss')
 
-        self.loss = self.error
-
+        variable_summaries(self.loss)
+        self.summary = tf.summary.merge_all()
 
     def summary_tensor(self):
         return self.summary
@@ -47,10 +48,10 @@ class Class_Model:
         return(self.loss)
 
     def true_value(self, env):
-        return(np.reshape(env.get_class(), [1, 1]))
+        return(np.reshape(env.get_class(), [1]))
 
     def cheat_value(self, env):
-        return self.true_value(env)/10
+        return self.true_value(env)
 
     def cheat_tensor(self):
         return self.cheat_class
@@ -85,10 +86,10 @@ class Class_Network:
                 self.source_net = cls({'data': self.s_input}, phase, trainable=trainable)
 
             with tf.variable_scope("siamese_network", reuse=True):
-                self.target_net = cls({'data': self.t_input}, trainable=trainable)
+                self.target_net = cls({'data': self.t_input}, phase, trainable=trainable)
 
-            self.s_out = self.source_net.get_output()
-            self.t_out = self.target_net.get_output()
+            self.s_out = flatten(self.source_net.get_output())
+            self.t_out = flatten(self.target_net.get_output())
               
             if cheat is not None:
                 print("Class network cheating....")
