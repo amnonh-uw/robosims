@@ -8,6 +8,7 @@ from util.util import *
 class Class_Model:
     def __init__(self, conf, cls, cheat=False, trainable=True):
         self.relative_errors = conf.relative_errors
+        self.pose_dims = conf.pose_dims
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
             self.cheat_class = tf.placeholder(tf.float32, shape=[None, 1], name='cheat_class')
@@ -48,7 +49,7 @@ class Class_Model:
         return(self.loss)
 
     def true_value(self, env):
-        return(np.reshape(env.get_class(), [1]))
+        return(np.reshape(env.get_class(dims=self.pose_dims), [1]))
 
     def cheat_value(self, env):
         return self.true_value(env)
@@ -56,24 +57,23 @@ class Class_Model:
     def cheat_tensor(self):
         return self.cheat_class
 
-    def accuracy(self, env, pred_softmax):
-        if pred_softmax.size != 6:
-            raise ValueError("accuracy excpects pred_value to be of size 6")
+    def error_str(self, true_class, pred_softmax):
+        if pred_softmax.size != self.pose_dims*2+1:
+            raise ValueError("errot_str excpects pred_value to be of size {}".format(self.pose_dims*2+1))
 
-        cls = np.argmax(pred_softmax)
-        return cls == env.get_class()
+        pred_class = np.argmax(pred_softmax)
 
-    def error_str(self, env, pred_softmax):
-        if pred_softmax.size != 6:
-            raise ValueError("accuracy excpects pred_value to be of size 6")
-
-        return "pred error " + str(self.accuracy(env, pred_softmax))
-
+        if pred_class != true_class:
+            return 'wrong ({} vs {}'.format(pred_class, true_class), True
+        else:
+            return 'right', False
+            
     def name(self):
         return "class"
 
 class Class_Network:
     def __init__(self, conf, cls, scope, phase, cheat = None, trainable=False):
+        self.pose_dims = conf.pose_dims
         self.scope = scope
 
         with tf.variable_scope(scope):
@@ -101,7 +101,7 @@ class Class_Network:
                 weights_initializer=normalized_columns_initializer(1.0),
                 biases_initializer=None, scope='hidden_vector')
 
-            self.pred_logits = slim.fully_connected(hidden, 6,
+            self.pred_logits = slim.fully_connected(hidden, self.pose_dims*2+1,
                 activation_fn=None,
                 weights_initializer=normalized_columns_initializer(1.0),
                 biases_initializer=None, scope='class_pred')

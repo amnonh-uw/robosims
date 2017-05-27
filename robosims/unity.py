@@ -38,7 +38,7 @@ class UnityGame:
             with open(idx_file, "rb") as idx:
                 self.index = pickle.load(idx)
                 if num_iter != 0:
-                    if num_iter >=self.index.size:
+                    if num_iter > self.index.size:
                             raise ValueError("num_iter {} inconsistent with index size {}".
                                 format(num_iter, self.index.size))
 
@@ -118,11 +118,14 @@ class UnityGame:
         return poses
 
 
-    def get_class(self):
-        delta = self.translation()
+    def get_class(self, dims=3):
+        delta = self.translation(dims=dims)
         cls = np.argmax(delta)
         if delta[cls] < 0:
-            cls += 3
+            cls += dims
+
+        if self.close_enough():
+            cls = 2 * dims
 
         return int(cls)
         

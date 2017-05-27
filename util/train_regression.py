@@ -220,7 +220,7 @@ def test(conf, sess, model, cls):
     test_iter = conf.test_iter
 
     print("testing... {} iterations".format(test_iter))
-    env = UnityGame(conf, num_iter=test_iter, randomize=False)
+    env = UnityGame(conf, dataset=conf.test_dataset, num_iter=test_iter, randomize=False)
 
     for episode_count in range(0, test_iter):
         env.new_episode()
@@ -259,7 +259,7 @@ def test(conf, sess, model, cls):
     env.close()
 
 def verify(conf, sess, model, cls):
-    env = UnityGame(args, verify_iter, dataset = conf.verify_dataset, randomize=False)
+    env = UnityGame(args, num_iter = verify_iter, dataset = conf.verify_dataset, randomize=False)
     total_error = 0
 
     for episode_count in range(0, conf.verify_iter):

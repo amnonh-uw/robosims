@@ -17,7 +17,7 @@ class Translation_Model:
         else:
             self.cheat_translation = None
 
-        self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat_translation, trainable=trainable, pose_dims=pose_dims)
+        self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat_translation, trainable=trainable)
         self.pred_translation = self.network.get_output()
 
         self.translation = tf.placeholder(tf.float32, name='translation', shape=[None, self.pose_dims])
@@ -61,18 +61,6 @@ class Translation_Model:
     def cheat_tensor(self):
         return self.cheat_translation
 
-    def accuracy(self, true_translation, pred_translation):
-        a = np.zeros(self.pose_dims, dtype=np.float32)
-
-        if self.relative_errors:
-            for i in range(0, self.pose_dims):
-                a[i] = map_accuracy(true_translation[:,i], pred_translation[:,i])
-        else:
-            for i in range(0, self.pose_dims):
-                a[i] = abs_accuracy(true_translation[:,i], pred_translation[:,i])
-
-        return(np.min(a))
-
     def error_str(self, true_translation, pred_translation):
         if true_translation.shape[0] != 1:
             raise ValueError("error_str excpects test_transaltion to be a vector")
@@ -104,7 +92,7 @@ class Translation_Model:
 class Translation_Network():
     def __init__(self, conf, cls, scope, phase, cheat = None, trainable=True, pose_dims=3):
         self.scope = scope
-        self.pose_dims = pose_dims
+        self.pose_dims = conf.pose_dims
 
         with tf.variable_scope(scope):
             #Input and visual encoding layers
