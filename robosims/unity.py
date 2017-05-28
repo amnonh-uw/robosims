@@ -24,8 +24,6 @@ class UnityGame:
     def __init__(self, conf, port=0, start_unity = True, dataset=None, num_iter=0, randomize=True):
         self.conf = conf
         random.seed()
-        if dataset is None:
-            dataset = conf.dataset
 
         if dataset == None or conf.gen_dataset:
             self.dataset = None

@@ -85,7 +85,7 @@ def train_regression(args, model_cls):
             episodes_in_batch = 0
             for epoch in range(0, epochs):
                 print("epoch {}".format(epoch))
-                env = UnityGame(conf, num_iter=train_iter)
+                env = UnityGame(conf, dataset=conf.dataset, num_iter=train_iter)
                 for i in range(0, train_iter):
                     env.new_episode()
                     episode_count += 1

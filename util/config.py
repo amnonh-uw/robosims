@@ -59,7 +59,7 @@ def parse_args(argv):
         if args.conf.iter == 0:
             args.conf.test_iter = 100
         else:
-            conf.test_iter = args.iter
+            args.conf.test_iter = args.iter
     else:
         if args.conf.iter == 0:
             args.conf.iter = 40000
