@@ -11,7 +11,7 @@ class Class_Model:
         self.pose_dims = conf.pose_dims
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
-            self.cheat_class = tf.placeholder(tf.float32, shape=[None, 1], name='cheat_class')
+            self.cheat_class = tf.placeholder(tf.float32, shape=[None], name='cheat_class')
         else:
             self.cheat_class = None
 
@@ -21,8 +21,12 @@ class Class_Model:
         self.pred_class = tf.to_int32(tf.argmax(self.pred_softmax, axis=1))
 
         # cross entropy loss and classifcation error
-        self.label = tf.placeholder(tf.int32, name='label', shape=[None, 1])
+        self.label = tf.placeholder(tf.int32, name='label', shape=[None])
+        # a = tf.Print(self.pred_class, (self.pred_class,), summarize = 100, message="prediction")
+        # b = tf.Print(self.label, (self.label,), summarize = 100, message="label")
         self.error = tf.not_equal(self.pred_class, self.label)
+        # self.error = tf.not_equal(a, b)
+        # self.error = tf.Print(self.error, (self.error,), summarize = 100, message="error")
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(tf.reshape(self.label,[-1]),
                 logits=self.pred_logits, scope='loss')
@@ -49,7 +53,8 @@ class Class_Model:
         return(self.loss)
 
     def true_value(self, env):
-        return(np.reshape(env.get_class(dims=self.pose_dims), [1]))
+        return env.get_class(dims=self.pose_dims)
+        #return np.reshape(env.get_class(dims=self.pose_dims), [1])
 
     def cheat_value(self, env):
         return self.true_value(env)
@@ -58,9 +63,6 @@ class Class_Model:
         return self.cheat_class
 
     def error_str(self, true_class, pred_softmax):
-        if pred_softmax.size != self.pose_dims*2+1:
-            raise ValueError("errot_str excpects pred_value to be of size {}".format(self.pose_dims*2+1))
-
         pred_class = np.argmax(pred_softmax)
 
         if pred_class != true_class:
@@ -101,7 +103,11 @@ class Class_Network:
                 weights_initializer=normalized_columns_initializer(1.0),
                 biases_initializer=None, scope='hidden_vector')
 
-            self.pred_logits = slim.fully_connected(hidden, self.pose_dims*2+1,
+            if self.pose_dims == 0:
+                num_classes = 2
+            else:
+                num_classes = self.pose_dims*2+1
+            self.pred_logits = slim.fully_connected(hidden, num_classes,
                 activation_fn=None,
                 weights_initializer=normalized_columns_initializer(1.0),
                 biases_initializer=None, scope='class_pred')

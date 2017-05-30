@@ -117,13 +117,19 @@ class UnityGame:
 
 
     def get_class(self, dims=3):
-        delta = self.translation(dims=dims)
-        cls = np.argmax(delta)
-        if delta[cls] < 0:
-            cls += dims
+        if dims == 0:
+            if self.close_enough():
+                cls = 1
+            else:
+                cls = 0
+        else:
+            delta = self.translation(dims=dims)
+            cls = np.argmax(delta)
+            if delta[cls] < 0:
+                cls += dims
 
-        if self.close_enough():
-            cls = 2 * dims
+            if self.close_enough():
+                cls = 2 * dims
 
         return int(cls)
         
