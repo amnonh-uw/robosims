@@ -15,7 +15,7 @@ def ignore_nan_and_inf(value, label, x_index):
         value: The value to check for NaN/INF.
         label: For which line the value was used (usually "loss train", "loss val", ...)
             This is used in the warning message.
-        x_index: At which x-index the value was used (e.g. 1 as in Epoch 1).
+        x_index: At which x-index the value was used (e.g. 1 as in mini batch 1).
             This is used in the warning message.
     Returns:
         value, but None if value is NaN or INF.
@@ -41,7 +41,7 @@ class LossAccPlotter(object):
                  show_loss_plot=True,
                  show_err_plot=True,
                  show_plot_window=True,
-                 x_label="Epoch"):
+                 x_label="Mini batch"):
         """Constructs the plotter.
 
         Args:
@@ -56,7 +56,7 @@ class LossAccPlotter(object):
             show_averages: Whether to plot moving averages in the charts for
                 each line (so for loss train, loss val, ...). This value may
                 only be True or False. To change the interval (default is 20
-                epochs), change the instance variable "averages_period" to the new
+                mini batches), change the instance variable "averages_period" to the new
                 integer value. (Default is True.)
             show_loss_plot: Whether to show the chart for the loss values. If
                 set to False, only the error chart will be shown. (Default
@@ -67,7 +67,7 @@ class LossAccPlotter(object):
                 or hide it (False). Hiding it makes only sense if you
                 set save_to_filepath. (Default is True.)
             x_label: Label on the x-axes of the charts. Reasonable choices
-                would be: "Epoch", "Batch" or "Example". (Default is "Epoch".)
+                would be: "Epoch", "Batch" or "Example". (Default is "Mini Batch".)
         """
         assert show_loss_plot or show_err_plot
         assert save_to_filepath is not None or show_plot_window
@@ -91,7 +91,7 @@ class LossAccPlotter(object):
         self.alpha_thick = 0.8
         self.alpha_thin = 0.5
 
-        # the interval for the moving averages, e.g. 20 = average over 20 epochs
+        # the interval for the moving averages, e.g. 20 = average over 20 mini-batches
         self.averages_period = 20
 
         # these values deal with the regression
@@ -122,7 +122,7 @@ class LossAccPlotter(object):
             "err_val_sma": "b-",
             "err_val_regression": "b:"
         }
-        # different linestyles for the first epoch (if only one value is available),
+        # different linestyles for the first mini-batch (if only one value is available),
         # because no line can then be drawn (needs 2+ points) and only symbols will
         # be shown.
         # No regression here, because regression always has at least at least
@@ -154,7 +154,7 @@ class LossAccPlotter(object):
     def add_values(self, x_index, loss_train=None, loss_val=None, err_train=None,
                    err_val=None, redraw=True):
         """Function to add new values for each line for a specific x-value (e.g.
-        a specific epoch).
+        a specific mini batches).
 
         Meaning of the values / lines:
          - loss_train: y-value of the loss function applied to the training set.
@@ -186,7 +186,7 @@ class LossAccPlotter(object):
                 (Default is None.)
             redraw: Whether to redraw the plot immediatly after receiving the
                 new values. This is reasonable if you add values once at the end
-                of every epoch. If you add many values in a row, set this to
+                of every mini batches. If you add many values in a row, set this to
                 False and call redraw() at the end (significantly faster).
                 (Default is True.)
         """
@@ -258,7 +258,7 @@ class LossAccPlotter(object):
         # draw the title
         # it seems to be necessary to set the title here instead of in redraw(),
         # otherwise the title is apparently added again and again with every
-        # epoch, making it ugly and bold
+        # mini batch, making it ugly and bold
         if self.title is not None:
             self.fig.suptitle(self.title, fontsize=self.title_fontsize)
 
@@ -273,15 +273,15 @@ class LossAccPlotter(object):
         Calling it every couple seconds should create no noticeable slowdown though.
 
         Args:
-            epoch: The index of the current epoch, starting at 0.
+            mini_batch: The index of the current mini batch, starting at 0.
             train_loss: All of the training loss values of each
-                epoch (list of floats).
+                mini batch (list of floats).
             train_err: All of the training error values of each
-                epoch (list of floats).
+                mini batch (list of floats).
             val_loss: All of the validation loss values of each
-                epoch (list of floats).
+                mini batch (list of floats).
             val_err: All of the validation error values of each
-                epoch (list of floats).
+                mini batch (list of floats).
         """
         # initialize the plot if it's the first redraw
         if self.fig is None:
@@ -348,8 +348,8 @@ class LossAccPlotter(object):
         ax2 = self.ax_err
 
         # Set the styles of the lines used in the charts
-        # Different line style for epochs after the first one, because
-        # the very first epoch has only one data point and therefore no line
+        # Different line style for mini-batches after the first one, because
+        # the very first mini batch has only one data point and therefore no line
         # and would be invisible without the changed style.
         ls_loss_train = self.linestyles["loss_train"]
         ls_loss_val = self.linestyles["loss_val"]
@@ -541,13 +541,13 @@ class LossAccPlotter(object):
         last_x = x_values[-1]
         nb_values = len(x_values)
 
-        # Compute regression lines based on n_backwards epochs
+        # Compute regression lines based on n_backwards mini batches
         # in the past, e.g. based on the last 10 values.
-        # n_backwards is calculated relative to the current epoch
-        # (e.g. at epoch 100 compute based on the last 10 values,
+        # n_backwards is calculated relative to the current mini batch
+        # (e.g. at mini batch 100 compute based on the last 10 values,
         # at 200 based on the last 20 values...). It has a minimum (e.g. never
-        # use less than 5 epochs (unless there are only less than 5 epochs))
-        # and a maximum (e.g. never use more than 1000 epochs).
+        # use less than 5 mini batches (unless there are only less than 5 mini batches))
+        # and a maximum (e.g. never use more than 1000 mini batches).
         # The minimum prevents bad predictions.
         # The maximum
         #   a) is better for performance
@@ -557,7 +557,7 @@ class LossAccPlotter(object):
         n_backward = max(n_backward, self.poly_n_backward_min)
         n_backward = min(n_backward, self.poly_n_backward_max)
 
-        # Compute the regression lines for the n_forward future epochs.
+        # Compute the regression lines for the n_forward future mini batches.
         # n_forward also has a reletive factor, as well as minimum and maximum
         # values (see n_backward).
         n_forward = int(nb_values * self.poly_forward_perc)

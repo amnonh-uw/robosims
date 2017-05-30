@@ -86,6 +86,9 @@ class Translation_Model:
 
         return s, highlight
 
+    def take_prediction_atep(env, pred_value):
+        env.take_prediction_step(pred_value)
+
     def name(self):
         return "translation"
 

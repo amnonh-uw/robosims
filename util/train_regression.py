@@ -241,10 +241,8 @@ def test(conf, sess, model, cls):
         else:
             for step in range(conf.test_steps):
                 pred_value = pred_value[0]
-                x = float(pred_value[0])
-                y = float(pred_value[1])
-                z = float(pred_value[2])
-                env.take_prediction_step(x, y,z)
+                model.take_prediction_step(env, pred_value)
+                env.take_prediction_step(pred_value)
                 image = env.get_state().source_buffer()
                 images.append(image)
                 pred_value = predict(sess, t, image, model, cls)
