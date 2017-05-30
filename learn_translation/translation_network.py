@@ -25,13 +25,13 @@ class Translation_Model:
 
         if self.relative_errors:
             self.error = tf.abs(tf.divide(self.error,  self.translation+0.001))
-            if conf.error_clip_min != None:
-                self.error = tf.clip_by_value(self.error, conf.error_clip_min,
-                                conf.error_clip_max, name='clipped_error') - conf.error_clip_min
 
-        # l2 loss
-        self.l2_loss = tf.nn.l2_loss(self.error, name='l2_loss')
-        variable_summaries(self.l2_loss)
+        # loss
+        if conf.clip_loss_lambda != None:
+            self.loss = tf.nn.l2_loss(self.error, name='l2_loss')
+        else
+            self.loss = tf.reduce_sum(tf.maximum(0, self.error*self.error - conf.clip_loss_lambda*self.translation*self.translation))
+        variable_summaries(self.loss)
         self.summary = tf.summary.merge_all()
 
     def summary_tensor(self):
@@ -50,7 +50,7 @@ class Translation_Model:
         return(self.translation)
 
     def loss_tensor(self):
-        return(self.l2_loss)
+        return(self.loss)
 
     def true_value(self, env):
         return(np.reshape(env.translation(dims=self.pose_dims), [self.pose_dims]))

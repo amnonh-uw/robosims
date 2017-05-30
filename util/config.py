@@ -102,6 +102,7 @@ class config(EasyDict):
         self.highlight_relative_error = 0.25
 
 
+
         # a3c
         self.num_workers = 1
         self.max_episode_length = 100
@@ -118,6 +119,10 @@ class config(EasyDict):
         # dicrete grid
         self.discrete_action_distance = 0.1
         self.discrete_action_rotation = 1.
+
+        # Data generation parameters
+        self.close_enough_prob = 0
+        self.too_far_prob = 0
 
         # criteria for goal success
         self.close_enough_distance = 0.01
@@ -153,10 +158,7 @@ class config(EasyDict):
         self.load_base_weights = False
 
         # loss
-        self.error_clip_min = None
-        self.error_clip_max = None
-        # self.loss_clip_min = 0.1        # 10%
-        # self.loss_clip_max = 1.1        # 110%
+        self.loss_clip_lambda = None
         self.entropy_loss_weight = 500.
         self.value_loss_weight = 0.5
         self.policy_loss_weight = 0.5

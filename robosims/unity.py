@@ -118,7 +118,7 @@ class UnityGame:
 
     def get_class(self, dims=3):
         if dims == 0:
-            if self.close_enough():
+            if self.all_close_enough():
                 cls = 1
             else:
                 cls = 0
@@ -128,7 +128,7 @@ class UnityGame:
             if delta[cls] < 0:
                 cls += dims
 
-            if self.close_enough():
+            if self.all_close_enough():
                 cls = 2 * dims
 
         return int(cls)
@@ -136,7 +136,7 @@ class UnityGame:
     def one_close_enough(self, a, b, dist):
         return abs(a-b) < dist
 
-    def close_enough(self):
+    def all_close_enough(self):
         b = True
 
         b = b and self.one_close_enough(self.t_position['x'], self.s_position['x'], self.conf.close_enough_distance)
@@ -148,7 +148,7 @@ class UnityGame:
 
         return b
 
-    def new_episode(self):
+    def new_episode(self, close_enough = False, too_far = False):
         if self.controller == None:
             if self.episode_counter == self.index.size:
                 raise ValueError("number of episodes in data set exceeded")
@@ -160,7 +160,7 @@ class UnityGame:
             self.__dict__.update(tmp_dict) 
         else:
             self.episode_finished = False
-            self.gen_new_episode()
+            self.gen_new_episode(close_enough = close_enough, too_far = too_far)
             self.collision = False
             self.action_counter = 0
 
@@ -274,7 +274,7 @@ class UnityGame:
             self.episode_finished = True
             return self.conf.collision_reward - self.action_counter * self.conf.step_reward
 
-        if self.close_enough():
+        if self.all_close_enough():
             print("episode ended because close enough")
             self.episode_finished = True
             return self.conf.close_enough_reward
@@ -355,13 +355,13 @@ class UnityGame:
 
         return event
 
-    def gen_new_episode(self):
+    def gen_new_episode(self, close_enough = False, too_far = False):
         self.min_r = 0
         self.max_r = 360
 
         while True:
             self.s_x, self.s_y, self.s_z, self.s_r = self.random_source_pose()
-            self.t_x, self.t_y, self.t_z, self.t_r = self.random_target_pose()
+            self.t_x, self.t_y, self.t_z, self.t_r = self.random_target_pose(close_enough=close_enough, too_far=too_far))
             self.t = self.valid_pose(self.t_x, self.t_y, self.t_z, self.t_r)
             if self.t is None:
                 continue
@@ -407,11 +407,21 @@ class UnityGame:
 
         return (x, y, z, r)
 
-    def random_target_pose(self):
-        x = self.uniform_delta(self.conf.max_distance_delta, self.s_x, self.min_x, self.max_x, self.conf.grid_distance)
-        y = self.uniform_delta(self.conf.max_distance_delta, self.s_y, self.min_y, self.max_y, self.conf.grid_distance)
-        z = self.uniform_delta(self.conf.max_distance_delta, self.s_z, self.min_z, self.max_z, self.conf.grid_distance)
-        r = self.uniform_delta(self.conf.max_rotation_delta, self.s_r, self.min_r, self.max_r, self.conf.grid_rotation)
+    def random_target_pose(self, close_enough = False, too_far = False):
+        if too_far:
+            raise NotImplementedError("too_far has not been implemented yet")
+
+        if close_enough:
+            distance_range = self.conf.close_enough_distance
+            rotation_range = self.conf.close_enough_rotation
+        else:
+            distance_range = self.max_distance_delta
+            rotation_range = self.max_rotation_delta
+            
+        x = self.uniform_delta(distance_range, self.s_x, self.min_x, self.max_x, self.conf.grid_distance)
+        y = self.uniform_delta(distance_range, self.s_y, self.min_y, self.max_y, self.conf.grid_distance)
+        z = self.uniform_delta(distance_range, self.s_z, self.min_z, self.max_z, self.conf.grid_distance)
+        r = self.uniform_delta(rotation_range, self.s_r, self.min_r, self.max_r, self.conf.grid_rotation)
 
         return (x, y, z, r)
 
