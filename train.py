@@ -1,4 +1,4 @@
-from util import train_reg
+from util import train_regression
 from util.config import parse_args
 
 def train(argv):

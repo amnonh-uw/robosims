@@ -76,7 +76,7 @@ def parse_args(argv):
     if args.conf.model != None:
         if args.conf.model.lower() == "translation":
             args.conf.model = Translation_Model
-        elseif args.conf.moodel.lower() == "class":
+        elif args.conf.moodel.lower() == "class":
             args.conf.model = Class_Model
         else:
             raise NotImplementedError("model {} doesn't exist".format(args.conf.model))
@@ -136,7 +136,7 @@ class config(EasyDict):
         self.too_far_prob = 0.0
 
         # criteria for goal success
-        self.close_enough_distance = 0.01
+        self.close_enough_distance = 0.05
         self.close_enough_rotation = 1.
 
         # distance between source and destination
