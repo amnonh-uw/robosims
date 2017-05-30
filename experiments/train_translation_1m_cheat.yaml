@@ -1,4 +1,5 @@
 learning_rate: 1.e-5
+model: translation
 postfix: translation_1m_cheat
 dataset: 1m
 max_distance_delta: 1.

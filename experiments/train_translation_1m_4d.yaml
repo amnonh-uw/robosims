@@ -1,4 +1,5 @@
 learning_rate: 1.e-5
+model: translation
 postfix: translation_1m_4d
 dataset: 1m_20deg
 max_distance_delta: 1.
