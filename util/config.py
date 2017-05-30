@@ -3,6 +3,8 @@ import yaml
 import re
 import os
 from easydict import EasyDict
+from learn_translation.translation_network import Translation_Model
+from learn_class.class_network import Class_Model
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description='a3c train')
@@ -71,6 +73,14 @@ def parse_args(argv):
         args.conf.postfix = re.sub('^.*/', '', re.sub('\.yaml$', '', args.config))
         print("defaulting to postfix {}".format(args.conf.postfix))
 
+    if args.conf.model != None:
+        if args.conf.model.lower() == "translation":
+            args.conf.model = Translation_Model
+        elseif args.conf.moodel.lower() == "class":
+            args.conf.model = Class_Model
+        else:
+            raise NotImplementedError("model {} doesn't exist".format(args.conf.model))
+
     return args
 
 class config(EasyDict):
@@ -102,6 +112,7 @@ class config(EasyDict):
         self.highlight_relative_error = 0.25
 
 
+        self.model = None
 
         # a3c
         self.num_workers = 1

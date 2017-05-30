@@ -17,6 +17,7 @@ from learn_translation.train import train as translation_network_train
 from learn_class.train import train as class_network_train
 from gen_dataset.gen_dataset import gen_dataset
 from util.bfs import run_bfs
+import train as model_train
 
 S3_BUCKET='ai2-vision-robosims'
 ENV="Bedroom_04"
@@ -182,6 +183,21 @@ def train_a3c(context, port=0, start_unity=True):
     sys.path.append("./networks")
     a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml', '--partial-load-model=model_translation/model-1500.cptk' ])
 
+@task
+def train(context, port=0, start_unity=True, config=None):
+    sys.path.append("./networks")
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
+    args.append("--config=" + config)
+    model_train(args)
+
+@task
+def test(context, port=0, start_unity=True, config=None):
+    sys.path.append("./networks")
+    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
+    args.append("--config=" + config)
+    model_train(args)
+
+@task
 @task
 def train_translation(context, port=0, start_unity=True, config="learn_translation/train.yaml"):
     sys.path.append("./networks")
