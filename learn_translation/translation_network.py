@@ -29,7 +29,7 @@ class Translation_Model:
         # loss
         if conf.clip_loss_lambda != None:
             self.loss = tf.nn.l2_loss(self.error, name='l2_loss')
-        else
+        else:
             self.loss = tf.reduce_sum(tf.maximum(0, self.error*self.error - conf.clip_loss_lambda*self.translation*self.translation))
         variable_summaries(self.loss)
         self.summary = tf.summary.merge_all()

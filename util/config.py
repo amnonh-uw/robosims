@@ -121,8 +121,8 @@ class config(EasyDict):
         self.discrete_action_rotation = 1.
 
         # Data generation parameters
-        self.close_enough_prob = 0
-        self.too_far_prob = 0
+        self.close_enough_prob = 0.0
+        self.too_far_prob = 0.0
 
         # criteria for goal success
         self.close_enough_distance = 0.01

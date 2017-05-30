@@ -361,7 +361,7 @@ class UnityGame:
 
         while True:
             self.s_x, self.s_y, self.s_z, self.s_r = self.random_source_pose()
-            self.t_x, self.t_y, self.t_z, self.t_r = self.random_target_pose(close_enough=close_enough, too_far=too_far))
+            self.t_x, self.t_y, self.t_z, self.t_r = self.random_target_pose(close_enough=close_enough, too_far=too_far)
             self.t = self.valid_pose(self.t_x, self.t_y, self.t_z, self.t_r)
             if self.t is None:
                 continue
@@ -415,8 +415,8 @@ class UnityGame:
             distance_range = self.conf.close_enough_distance
             rotation_range = self.conf.close_enough_rotation
         else:
-            distance_range = self.max_distance_delta
-            rotation_range = self.max_rotation_delta
+            distance_range = self.conf.max_distance_delta
+            rotation_range = self.conf.max_rotation_delta
             
         x = self.uniform_delta(distance_range, self.s_x, self.min_x, self.max_x, self.conf.grid_distance)
         y = self.uniform_delta(distance_range, self.s_y, self.min_y, self.max_y, self.conf.grid_distance)
