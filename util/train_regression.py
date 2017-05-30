@@ -146,7 +146,7 @@ def train_regression(args, model_cls):
                     summary_writer.add_summary(summary, batch_count)
 
                     err = np.sum(errors) / errors.size
-                    err_train = 1 - err
+                    err_train = err
                     loss = loss / conf.batch_size
                     loss_train = loss 
                     if abs(err_train) > 2:
