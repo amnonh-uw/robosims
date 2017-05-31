@@ -76,7 +76,7 @@ def parse_args(argv):
     if args.conf.model != None:
         if args.conf.model.lower() == "translation":
             args.conf.model = Translation_Model
-        elif args.conf.moodel.lower() == "class":
+        elif args.conf.model.lower() == "class":
             args.conf.model = Class_Model
         else:
             raise NotImplementedError("model {} doesn't exist".format(args.conf.model))
