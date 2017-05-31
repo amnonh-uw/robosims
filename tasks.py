@@ -17,7 +17,7 @@ from learn_translation.train import train as translation_network_train
 from learn_class.train import train as class_network_train
 from gen_dataset.gen_dataset import gen_dataset
 from util.bfs import run_bfs
-import train as model_train
+from train import train as model_train
 
 S3_BUCKET='ai2-vision-robosims'
 ENV="Bedroom_04"
@@ -198,59 +198,5 @@ def test(context, port=0, start_unity=True, config=None):
     model_train(args)
 
 @task
-@task
-def train_translation(context, port=0, start_unity=True, config="learn_translation/train.yaml"):
-    sys.path.append("./networks")
-    args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
-    args.append("--config=" + config)
-    translation_network_train(args)
-
-@task
-def test_translation(context, port=0, start_unity=True, config="learn_translation/test.html"):
-    sys.path.append("./networks")
-    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
-    args.append("--config=" + config)
-    translation_network_train(args)
-
-@task
-def train_class(context, port=0, start_unity=True, config="learn_translation/train.yaml"):
-    sys.path.append("./networks")
-    args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
-    args.append("--config=" + config)
-    print(args)
-    class_network_train(args)
-
-@task
-def test_class(context, port=0, start_unity=True, config="learn_translation/test.yaml"):
-    sys.path.append("./networks")
-    args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
-    args.append("--config=" + config)
-    class_network_train(args)
-
-@task
 def gen_train_dataset(context, port=0, start_unity=True, config=""):
     gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config='+config])
-    
-@task
-def gen_train_datasets(context, port=0, start_unity=True):
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m.yaml'])
-
-@task
-def gen_test_datasets(context, port=0, start_unity=True):
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_50cm.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_20cm.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_1m.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_50cm_20deg.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_20cm_20deg.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/test_1m_20deg.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/verify_50cm.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/verify_20cm.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/verify_1m.yaml'])
-
-@task
-def gen_rot_datasets(context, port=0, start_unity=True):
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/50cm_20deg.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/20cm_20deg.yaml'])
-    gen_dataset(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=gen_dataset/1m_20deg.yaml'])
