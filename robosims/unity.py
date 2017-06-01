@@ -406,8 +406,8 @@ class UnityGame:
         return (x, y, z, r)
 
     def random_target_pose(self, close_enough = False, too_far = False):
-        if too_far:
-            raise NotImplementedError("too_far has not been implemented yet")
+        if too_far and close_enough:
+            raise ValueError("too_far and close_enough cannot both be True")
 
         if close_enough:
             distance_range = self.conf.close_enough_distance
@@ -420,6 +420,9 @@ class UnityGame:
         y = self.uniform_delta(distance_range, self.s_y, self.min_y, self.max_y, self.conf.grid_distance)
         z = self.uniform_delta(distance_range, self.s_z, self.min_z, self.max_z, self.conf.grid_distance)
         r = self.uniform_delta(rotation_range, self.s_r, self.min_r, self.max_r, self.conf.grid_rotation)
+
+        if too_far:
+            r = 180
 
         return (x, y, z, r)
 
