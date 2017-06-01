@@ -4,3 +4,6 @@ postfix: translation_1m
 dataset: test_1m
 max_distance_delta: 1.
 max_rotation_delta: 0
+test_steps: 3
+pose_dims: 3
+model: translation

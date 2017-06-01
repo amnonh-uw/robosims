@@ -1,0 +1,9 @@
+postfix: translation_1m_4d
+max_distance_delta: 1.
+max_rotation_delta: 20.
+pose_dims: 4
+base_class: vgg16
+relative_errors: no
+colocate_gradients_with_ops: no
+test_steps: 3
+model: translation

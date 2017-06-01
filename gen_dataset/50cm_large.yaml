@@ -1,9 +1,0 @@
-# distance between source and destination
-max_distance_delta: 0.5
-max_rotation_delta: 0.
-probe_distance: 1.
-# grid
-grid_distance: 0.01
-grid_rotation: 0.1
-iter: 160000
-dataset: 50cm_large
