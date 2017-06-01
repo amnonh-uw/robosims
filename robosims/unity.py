@@ -184,17 +184,16 @@ class UnityGame:
         self.extract_source_pose()
         return event
 
-    def take_prediction_step(self, pred):
+    def take_prediction_step(self, step):
         x = y = z = r = 0
-        dims = steps.shape[0]
-        step = step[0]
-        x = step[0]
+        dims = step.size
+        x = float(step[0])
         if dims > 1:
-            y = step[1]
+            y = float(step[1])
         if dims > 2:
-            z = step[2]
+            z = float(step[2])
         if dims > 3:
-            r = step[3]
+            r = float(step[3])
         event = self.take_add_position_action(x, y, z)
         if r != 0:
             event = self.take_add_rotation_action(0, r, 0)

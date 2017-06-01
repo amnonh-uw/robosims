@@ -128,7 +128,7 @@ class Controller(object):
                 raise Exception("process died %s " % pid)
 
             post_children = wc()
-            print("len {} wc {}".format(len(post_children), post_children))
+            # print("len {} wc {}".format(len(post_children), post_children))
 
             diff = len(post_children) - len(pre_children)
             if diff < 0 or diff > 1:
@@ -179,11 +179,17 @@ class Controller(object):
 
             print("launched pid %s" % self.pid)
             if linux:
-                atexit.register(lambda: os.kill(self.pid, signal.SIGKILL))
+                atexit.register(lambda: self.kill_self())
                 self.server.xwindow_id = self.find_xwindow_id(self.pid, wc, pre_children)
                 self.server.window_children = wc
 
         self.server.start()
+
+    def kill_self(self):
+        try:
+            os.kill(self.pid, signal.SIGKILL)
+        except ProcessLookupError as e:
+            pass
 
     def start(self, port=0, start_unity=True):
         config = robosims.config.update_config_from_yaml(self.config_file)

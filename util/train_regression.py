@@ -179,7 +179,10 @@ def train_regression(args, model_cls):
             if epochs != 0:
                 plotter.redraw()
 
-            test(conf, sess, model, cls)
+            test(conf, sess, model, cls, steps=0)
+            if conf.test_steps != 0:
+                test(conf, sess, model, cls, steps=conf.test_steps)
+                
 
         except KeyboardInterrupt:
             print("W: interrupt received, stopping…")
@@ -216,7 +219,7 @@ def verify_err(sess, t, s, model, cls):
     errors = sess.run(model.error_tensor(), feed_dict=feed_dict)
     return np.sum(errors) / errors.size
 
-def test(conf, sess, model, cls):
+def test(conf, sess, model, cls, steps = 0):
     test_iter = conf.test_iter
 
     print("testing... {} iterations".format(test_iter))
@@ -236,11 +239,11 @@ def test(conf, sess, model, cls):
         cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
         cap_texts2 = [ err_str, "" ]
 
-        if conf.test_steps == 0:
+        if steps == 0:
             make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count, highlight = highlight)
         else:
-            for step in range(conf.test_steps):
-                pred_value = pred_value[0]
+            for step in range(steps):
+                pred_value = np.squeeze(pred_value)
                 model.take_prediction_step(env, pred_value)
                 env.take_prediction_step(pred_value)
                 image = env.get_state().source_buffer()

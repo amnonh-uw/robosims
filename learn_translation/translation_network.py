@@ -27,7 +27,7 @@ class Translation_Model:
             self.error = tf.abs(tf.divide(self.error,  self.translation+0.001))
 
         # loss
-        if conf.clip_loss_lambda != None:
+        if conf.clip_loss_lambda == None:
             self.loss = tf.nn.l2_loss(self.error, name='l2_loss')
         else:
             self.loss = tf.reduce_sum(tf.maximum(0, self.error*self.error - conf.clip_loss_lambda*self.translation*self.translation))
@@ -86,7 +86,7 @@ class Translation_Model:
 
         return s, highlight
 
-    def take_prediction_atep(env, pred_value):
+    def take_prediction_step(self, env, pred_value):
         env.take_prediction_step(pred_value)
 
     def name(self):

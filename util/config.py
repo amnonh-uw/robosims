@@ -169,7 +169,7 @@ class config(EasyDict):
         self.load_base_weights = False
 
         # loss
-        self.loss_clip_lambda = None
+        self.clip_loss_lambda = None
         self.entropy_loss_weight = 500.
         self.value_loss_weight = 0.5
         self.policy_loss_weight = 0.5
