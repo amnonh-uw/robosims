@@ -107,13 +107,12 @@ class UnityGame:
 
         raise ValueError("dim must be 1, 3 or 4")
 
-    def recalibrate(self, poses, dims=3):
+    def recalibrate(self, pose, dims=3):
         # switch r back from [-1,1]
         if dims == 4:
-            for i in range(poses.shape[0]):
-                poses[i, 3] *= self.conf.max_rotation_delta
+            pose[3] *= self.conf.max_rotation_delta
 
-        return poses
+        return pose
 
 
     def get_class(self, dims=3):

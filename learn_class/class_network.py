@@ -62,13 +62,15 @@ class Class_Model:
     def cheat_tensor(self):
         return self.cheat_class
 
-    def error_str(self, true_class, pred_softmax):
+    def error_strings(self, true_class, pred_softmax):
         pred_class = np.argmax(pred_softmax)
 
         if pred_class != true_class:
-            return 'wrong ({} vs {}'.format(pred_class, true_class), True
+            s = 'wrong ({} vs {}'.format(pred_class, true_class)
+            return [s], True
         else:
-            return 'right', False
+            s = 'right'
+            return [s], False
             
     def name(self):
         return "class"

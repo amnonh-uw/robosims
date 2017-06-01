@@ -9,8 +9,10 @@ class Translation_Model:
     def __init__(self, conf, cls, cheat=False, trainable=True):
         self.relative_errors = conf.relative_errors
         self.pose_dims = conf.pose_dims
-        self.highlight_absolute_error = conf.highlight_absolute_error
-        self.highlight_relative_error = conf.highlight_relative_error
+        self.highlight_rot_absolute_error = conf.highlight_rot_absolute_error
+        self.highlight_rot_relative_error = conf.highlight_rot_relative_error
+        self.highlight_pos_absolute_error = conf.highlight_pos_absolute_error
+        self.highlight_pos_relative_error = conf.highlight_pos_relative_error
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
             self.cheat_translation = tf.placeholder(tf.float32, shape=[None, self.pose_dims], name='cheat_translation')
@@ -52,8 +54,18 @@ class Translation_Model:
     def loss_tensor(self):
         return(self.loss)
 
-    def true_value(self, env):
-        return(np.reshape(env.translation(dims=self.pose_dims), [self.pose_dims]))
+    def true_value(self, env, recalibrate=False):
+        v = np.reshape(env.translation(dims=self.pose_dims), [self.pose_dims])
+        if recalibrate:
+            v = env.recalibrate(v, dims=self.pose_dims)
+
+        return(v)
+
+    def recalibrate(self, value, env):
+        for i in range(value.shape[0]):
+            value[i,:] =  env.recalibrate(value[i,:], dims=self.pose_dims)
+
+        return value
 
     def cheat_value(self, env):
         return self.true_value(env)
@@ -61,30 +73,39 @@ class Translation_Model:
     def cheat_tensor(self):
         return self.cheat_translation
 
-    def error_str(self, true_translation, pred_translation):
+    def error_strings(self, true_translation, pred_translation):
         if true_translation.shape[0] != 1:
             raise ValueError("error_str excpects test_transaltion to be a vector")
 
+        strings = []
         highlight = False
-        s = "pred_error "
+
+        texts = ["x err:", "y err:", "z err:", "r err:"]
         for i in range(0,self.pose_dims):
+            if i <= 3:
+                highlight_absolute_error = self.highlight_pos_absolute_error
+                highlight_relative_error = self.highlight_pos_relative_error
+            else:
+                highlight_absolute_error = self.highlight_rot_absolute_error
+                highlight_relative_error = self.highlight_rot_relative_error
+
             relative_err = map_error(true_translation[0,i], pred_translation[0,i])
             absolute_err = abs_error(true_translation[0,i], pred_translation[0,i])
 
-            if absolute_err > self.highlight_absolute_error:
-                if relative_err > self.highlight_relative_error:
+            if absolute_err > highlight_absolute_error:
+                if relative_err > highlight_relative_error:
                     highlight = True
 
+            s = texts[i]
             s += str(round(relative_err, 2) *100) + "% "
             s += '('
             s += str(round(absolute_err, 2))
             s += "/"
             s += str(round(true_translation[0,i], 2))
             s += ')'
-            if i != 2:
-                s += ','
+            strings.append(s)
 
-        return s, highlight
+        return strings, highlight
 
     def take_prediction_step(self, env, pred_value):
         env.take_prediction_step(pred_value)

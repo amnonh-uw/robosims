@@ -136,6 +136,7 @@ def train_regression(args, model_cls):
                     if conf.check_gradients:
                         check_grad(sess, grads_and_vars, feed_dict)
 
+                    # do we need predicted values here?
                     _, loss, pred_values, errors, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
@@ -195,7 +196,7 @@ def train_regression(args, model_cls):
             if env != None:
                 env.close()
 
-def predict(sess, t, s, model, cls):
+def predict(sess, t, s, model, cls, env):
     t_input = np.expand_dims(process_frame(t, cls), axis=0)
     s_input = np.expand_dims(process_frame(s, cls), axis=0)
 
@@ -205,6 +206,7 @@ def predict(sess, t, s, model, cls):
                 model.network.t_input:t_input }
 
     pred_value = sess.run(model.pred_tensor(), feed_dict=feed_dict)
+    pred_value = model.recalibrate(pred_value, env)
     return pred_value
 
 def verify_err(sess, t, s, model, cls):
@@ -225,37 +227,50 @@ def test(conf, sess, model, cls, steps = 0):
     print("testing... {} iterations".format(test_iter))
     env = UnityGame(conf, dataset=conf.test_dataset, num_iter=test_iter, randomize=False)
 
+    def empty_strings(n):
+        l = []
+        for k in range(n):
+            l.append("")
+        return l
+
     for episode_count in range(0, test_iter):
         env.new_episode()
         t = env.get_state().target_buffer()
         s = env.get_state().source_buffer()
-        pred_value = predict(sess, t, s,  model, cls)
-        true_value = np.expand_dims(model.true_value(env), axis=0)
-        highlight = False
+        pred_value = predict(sess, t, s,  model, cls, env)
+        true_value = np.expand_dims(model.true_value(env, recalibrate=True), axis=0)
 
+        highlight = False
         images = [t, s]
-        err_str, h = model.error_str(true_value, pred_value)
+
+        cap_texts = [("target:" + env.target_str())]
+        err_strings, h = model.error_strings(true_value, pred_value)
         highlight = highlight or h
-        cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
-        cap_texts2 = [ err_str, "" ]
+        cap_texts.extend(err_strings)
+        images_cap_texts = [cap_texts]
+
+        cap_texts = ["source:" + env.source_str()]
+        cap_texts.extend(empty_strings(len(err_strings)))
+        images_cap_texts.append(cap_texts)
 
         if steps == 0:
-            make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count, highlight = highlight)
+            make_jpg(conf, "test_set_", images, images_cap_texts,  episode_count, highlight = highlight)
         else:
             for step in range(steps):
                 pred_value = np.squeeze(pred_value)
                 model.take_prediction_step(env, pred_value)
-                env.take_prediction_step(pred_value)
                 image = env.get_state().source_buffer()
                 images.append(image)
-                pred_value = predict(sess, t, image, model, cls)
-                true_value = np.expand_dims(model.true_value(env), axis=0)
-                err_str, h = model.error_str(true_value, pred_value)
-                highlight = highlight or h
-                cap_texts.append("step {}:{}".format(step+1, env.source_str()))
-                cap_texts2.append(err_str)
 
-            make_jpg(conf, "test_set_steps_", images, cap_texts, cap_texts2, episode_count, highlight = highlight)
+                pred_value = predict(sess, t, image, model, cls, env)
+                true_value = np.expand_dims(model.true_value(env, recalibrate=True), axis=0)
+                err_strings, h = model.error_strings(true_value, pred_value)
+                highlight = highlight or h
+                cap_texts = [("step {}:{}".format(step+1, env.source_str()))]
+                cap_texts.extend(err_strings)
+                images_cap_texts.append(cap_texts)
+
+            make_jpg(conf, "test_set_steps_", images, images_cap_texts, episode_count, highlight = highlight)
 
     env.close()
 

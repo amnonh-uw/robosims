@@ -51,26 +51,24 @@ def make_gif(conf, episode_target_frame, episode_source_frames, episode_count):
 
     writer.close()
 
-def make_image(images, cap_texts = None, cap_texts2=None, highlight = False):
+def make_image(images, cap_texts, highlight = False):
     seperator_width = 4
     text_height_margin = 4
     text_width_margin = 10
+    num_caps = len(cap_texts[0])
 
     image0 = images[0]
 
     font = get_font(16)
     image0_draw = ImageDraw.Draw(image0)
     _, text_height = image0_draw.textsize("Hello", font=font)
-    caption_height = text_height * 2 + 3 * text_height_margin
-    line1_height = text_height_margin
-    line2_height = text_height_margin  * 2 + text_height
-    height = image0.size[1] + text_height
-    seperator = Image.new('RGB', (seperator_width, height))
 
-    # calculae width, build bottom list and apply caption defaults
+    caption_height = (text_height + text_height_margin) * num_caps + 2 * text_height_margin
+    seperator_height = image0.size[1]
+    seperator = Image.new('RGB', (seperator_width, seperator_height))
+
+    # calculae width, build bottom list
     width = -seperator_width
-    full_cap_texts = list()
-    full_cap_texts2 = list()
     bottom_list = list()
     for i in range(len(images)):
         width += images[i].size[0] + seperator_width
@@ -78,32 +76,9 @@ def make_image(images, cap_texts = None, cap_texts2=None, highlight = False):
         if i != len(images) - 1:
             bottom_list.append(seperator)
 
-        if cap_texts is not None:
-            if len(cap_texts) > i:
-                t = cap_texts[i]
-            else:
-                t = ""
-        else:
-            t = ""
-        full_cap_texts.append(t)
-
-        if cap_texts2 is not None:
-            if len(cap_texts2) > i:
-                t = cap_texts2[i]
-            else:
-                t = ""
-        else:
-            t = ""
-        full_cap_texts2.append(t)
-
     # build caption
     caption = Image.new('RGB', (width, caption_height))
     caption_draw = ImageDraw.Draw(caption)
-
-    width_start = text_width_margin
-    for i in range(len(images)):
-        caption_draw.text((width_start,line1_height), full_cap_texts[i], font=font)
-        width_start += seperator_width + images[i].size[0]
 
     width_start = text_width_margin
     for i in range(len(images)):
@@ -111,21 +86,27 @@ def make_image(images, cap_texts = None, cap_texts2=None, highlight = False):
             fill = "red"
         else:
             fill = "white"
-        caption_draw.text((width_start,line2_height), full_cap_texts2[i], font=font, fill=fill)
-        width_start += seperator_width + images[i].size[0]
 
+        caps = cap_texts[i]
+        line_height = text_height_margin
+
+        for j in range(len(caps)):
+            caption_draw.text((width_start,line_height), caps[j], font=font, fill=fill)
+            line_height += text_height_margin + text_height
+
+        width_start += seperator_width + images[i].size[0]
 
     bottom = hstack_images(bottom_list)
     stacked = vstack_images((caption, bottom))
 
     return stacked
 
-def make_jpg(conf, prefix, array_images, cap_texts, cap_texts2, episode_count, highlight = False):
+def make_jpg(conf, prefix, array_images, cap_texts, episode_count, highlight = False):
     images = []
     for im in array_images:
         images.append(Image.fromarray(im))
 
-    stacked = make_image(images, cap_texts, cap_texts2, highlight)
+    stacked = make_image(images, cap_texts, highlight)
     stacked.save(conf.frames_path + "/" +  prefix + str(episode_count)+'.jpg')
 
 def vstack_images(images):
