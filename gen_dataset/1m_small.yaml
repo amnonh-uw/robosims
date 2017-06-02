@@ -6,4 +6,4 @@ iter: 10000
 # grid
 grid_distance: 0.01
 grid_rotation: 0.1
-dataset: small_1m
+dataset: datasets/small_1m
