@@ -206,7 +206,6 @@ def predict(sess, t, s, model, cls, env):
                 model.network.t_input:t_input }
 
     pred_value = sess.run(model.pred_tensor(), feed_dict=feed_dict)
-    pred_value = model.recalibrate(pred_value, env)
     return pred_value
 
 def verify_err(sess, t, s, model, cls):
@@ -244,7 +243,7 @@ def test(conf, sess, model, cls, steps = 0):
         t = env.get_state().target_buffer()
         s = env.get_state().source_buffer()
         pred_value = predict(sess, t, s,  model, cls, env)
-        true_value = np.expand_dims(model.true_value(env, recalibrate=True), axis=0)
+        true_value = np.expand_dims(model.true_value(env), axis=0)
 
         images = [t, s]
 
@@ -273,7 +272,7 @@ def test(conf, sess, model, cls, steps = 0):
                 images.append(image)
 
                 pred_value = predict(sess, t, image, model, cls, env)
-                true_value = np.expand_dims(model.true_value(env, recalibrate=True), axis=0)
+                true_value = np.expand_dims(model.true_value(env), axis=0)
                 err_strings, err_colors = model.error_strings(true_value, pred_value)
                 cap_texts = [("step {}:{}".format(step+1, env.source_str()))]
                 cap_texts.extend(err_strings)

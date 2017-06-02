@@ -54,7 +54,6 @@ class Class_Model:
 
     def true_value(self, env):
         return env.get_class(dims=self.pose_dims)
-        #return np.reshape(env.get_class(dims=self.pose_dims), [1])
 
     def cheat_value(self, env):
         return self.true_value(env)
@@ -67,10 +66,9 @@ class Class_Model:
 
         if pred_class != true_class:
             s = 'wrong ({} vs {}'.format(pred_class, true_class)
-            return [s], True
+            return [s], ["red"]
         else:
-            s = 'right'
-            return [s], False
+            return ["right"], ["white"]
             
     def name(self):
         return "class"
@@ -106,7 +104,7 @@ class Class_Network:
                 biases_initializer=None, scope='hidden_vector')
 
             if self.pose_dims == 0:
-                num_classes = 2
+                num_classes = 3
             else:
                 num_classes = self.pose_dims*2+1
             self.pred_logits = slim.fully_connected(hidden, num_classes,

@@ -100,27 +100,20 @@ class UnityGame:
         if dims == 3:
             return(delta_xyz)
         if dims == 4:
-            # move r to [-1,1]
             r = delta_pqr[1]
-            r = r / self.conf.max_rotation_delta
             return np.append(delta_xyz, r)
 
         raise ValueError("dim must be 1, 3 or 4")
-
-    def recalibrate(self, pose, dims=3):
-        # switch r back from [-1,1]
-        if dims == 4:
-            pose[3] *= self.conf.max_rotation_delta
-
-        return pose
-
 
     def get_class(self, dims=3):
         if dims == 0:
             if self.all_close_enough():
                 cls = 1
+            elif self.too_far_episode:
+                cls = 2
             else:
                 cls = 0
+
         else:
             delta = self.translation(dims=dims)
             cls = np.argmax(delta)
@@ -148,6 +141,8 @@ class UnityGame:
         return b
 
     def new_episode(self, close_enough = False, too_far = False):
+        self.close_enough_episode = close_enough
+        self.too_far_episode = too_far
         if self.controller == None:
             if self.episode_counter == self.index.size:
                 raise ValueError("number of episodes in data set exceeded")
@@ -158,10 +153,11 @@ class UnityGame:
             self.remove_private_members(tmp_dict)
             self.__dict__.update(tmp_dict) 
         else:
-            self.episode_finished = False
             self.gen_new_episode(close_enough = close_enough, too_far = too_far)
-            self.collision = False
-            self.action_counter = 0
+
+        self.episode_finished = False
+        self.collision = False
+        self.action_counter = 0
 
     def get_state(self):
         return UnityState(self.s_frame, self.t_frame, self.collision)

@@ -9,6 +9,7 @@ class Translation_Model:
     def __init__(self, conf, cls, cheat=False, trainable=True):
         self.relative_errors = conf.relative_errors
         self.pose_dims = conf.pose_dims
+        self.rescale = tf.constant(self.rescale_value(self.pose_dims), dtype=tf.float32)
         self.highlight_rot_absolute_error = conf.highlight_rot_absolute_error
         self.highlight_rot_relative_error = conf.highlight_rot_relative_error
         self.highlight_pos_absolute_error = conf.highlight_pos_absolute_error
@@ -23,16 +24,16 @@ class Translation_Model:
         self.pred_translation = self.network.get_output()
 
         self.translation = tf.placeholder(tf.float32, name='translation', shape=[None, self.pose_dims])
-        self.error = self.pred_translation - self.translation
+        self.error = tf.multiply(self.pred_translation - self.translation, self.rescale)
 
         if self.relative_errors:
-            self.error = tf.abs(tf.divide(self.error,  self.translation+0.001))
+            self.error = tf.abs(tf.divide(self.error,  tf.multiply(self.translation, self.rescale)+0.001))
 
         # loss
         if conf.clip_loss_lambda == None:
             self.loss = tf.nn.l2_loss(self.error, name='l2_loss')
         else:
-            self.loss = tf.reduce_sum(tf.maximum(0, self.error*self.error - conf.clip_loss_lambda*self.translation*self.translation))
+            self.loss = tf.reduce_sum(tf.maximum(0., self.error*self.error - conf.clip_loss_lambda*self.translation*self.translation))
         variable_summaries(self.loss)
         self.summary = tf.summary.merge_all()
 
@@ -54,12 +55,12 @@ class Translation_Model:
     def loss_tensor(self):
         return(self.loss)
 
-    def true_value(self, env, recalibrate=False):
-        v = np.reshape(env.translation(dims=self.pose_dims), [self.pose_dims])
-        if recalibrate:
-            v = env.recalibrate(v, dims=self.pose_dims)
+    def rescale_value(self, dims):
+        rescale = [1, 1, 1, 2*math.pi/360]
+        return(rescale[:dims])
 
-        return(v)
+    def true_value(self, env):
+        return np.reshape(env.translation(dims=self.pose_dims), [self.pose_dims])
 
     def recalibrate(self, value, env):
         for i in range(value.shape[0]):
