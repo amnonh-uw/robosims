@@ -233,6 +233,12 @@ def test(conf, sess, model, cls, steps = 0):
             l.append("")
         return l
 
+    def empty_colors(n):
+        l = []
+        for k in range(n):
+            l.append("white")
+        return l
+
     for episode_count in range(0, test_iter):
         env.new_episode()
         t = env.get_state().target_buffer()
@@ -240,21 +246,25 @@ def test(conf, sess, model, cls, steps = 0):
         pred_value = predict(sess, t, s,  model, cls, env)
         true_value = np.expand_dims(model.true_value(env, recalibrate=True), axis=0)
 
-        highlight = False
         images = [t, s]
 
         cap_texts = [("target:" + env.target_str())]
-        err_strings, h = model.error_strings(true_value, pred_value)
-        highlight = highlight or h
+        cap_colors = ["white"]
+        err_strings, err_colors = model.error_strings(true_value, pred_value)
         cap_texts.extend(err_strings)
+        cap_colors.extend(err_colors)
         images_cap_texts = [cap_texts]
+        images_cap_colors = [cap_colors]
 
         cap_texts = ["source:" + env.source_str()]
         cap_texts.extend(empty_strings(len(err_strings)))
+        cap_colors = ["white"]
+        cap_colors.extend(empty_colors(len(err_strings)))
         images_cap_texts.append(cap_texts)
+        images_cap_colors.append(cap_colors)
 
         if steps == 0:
-            make_jpg(conf, "test_set_", images, images_cap_texts,  episode_count, highlight = highlight)
+            make_jpg(conf, "test_set_", images, images_cap_texts,  images_cap_colors, episode_count)
         else:
             for step in range(steps):
                 pred_value = np.squeeze(pred_value)
@@ -264,13 +274,15 @@ def test(conf, sess, model, cls, steps = 0):
 
                 pred_value = predict(sess, t, image, model, cls, env)
                 true_value = np.expand_dims(model.true_value(env, recalibrate=True), axis=0)
-                err_strings, h = model.error_strings(true_value, pred_value)
-                highlight = highlight or h
+                err_strings, err_colors = model.error_strings(true_value, pred_value)
                 cap_texts = [("step {}:{}".format(step+1, env.source_str()))]
                 cap_texts.extend(err_strings)
+                cap_colors = ["white"]
+                cap_colors.extend(err_colors)
                 images_cap_texts.append(cap_texts)
+                images_cap_colors.append(cap_colors)
 
-            make_jpg(conf, "test_set_steps_", images, images_cap_texts, episode_count, highlight = highlight)
+            make_jpg(conf, "test_set_steps_", images, images_cap_texts, images_cap_colors, episode_count)
 
     env.close()
 

@@ -78,7 +78,7 @@ class Translation_Model:
             raise ValueError("error_str excpects test_transaltion to be a vector")
 
         strings = []
-        highlight = False
+        colors = []
 
         texts = ["x err:", "y err:", "z err:", "r err:"]
         for i in range(0,self.pose_dims):
@@ -92,9 +92,10 @@ class Translation_Model:
             relative_err = map_error(true_translation[0,i], pred_translation[0,i])
             absolute_err = abs_error(true_translation[0,i], pred_translation[0,i])
 
+            color = "white"
             if absolute_err > highlight_absolute_error:
                 if relative_err > highlight_relative_error:
-                    highlight = True
+                    color = "red"
 
             s = texts[i]
             s += str(round(relative_err, 2) *100) + "% "
@@ -104,8 +105,9 @@ class Translation_Model:
             s += str(round(true_translation[0,i], 2))
             s += ')'
             strings.append(s)
+            colors.append(color)
 
-        return strings, highlight
+        return strings, colors
 
     def take_prediction_step(self, env, pred_value):
         env.take_prediction_step(pred_value)

@@ -51,7 +51,7 @@ def make_gif(conf, episode_target_frame, episode_source_frames, episode_count):
 
     writer.close()
 
-def make_image(images, cap_texts, highlight = False):
+def make_image(images, cap_texts, cap_colors):
     seperator_width = 4
     text_height_margin = 4
     text_width_margin = 10
@@ -82,16 +82,12 @@ def make_image(images, cap_texts, highlight = False):
 
     width_start = text_width_margin
     for i in range(len(images)):
-        if highlight:
-            fill = "red"
-        else:
-            fill = "white"
-
         caps = cap_texts[i]
+        colors = cap_colors[i]
         line_height = text_height_margin
 
         for j in range(len(caps)):
-            caption_draw.text((width_start,line_height), caps[j], font=font, fill=fill)
+            caption_draw.text((width_start,line_height), caps[j], font=font, fill=colors[j])
             line_height += text_height_margin + text_height
 
         width_start += seperator_width + images[i].size[0]
@@ -101,12 +97,12 @@ def make_image(images, cap_texts, highlight = False):
 
     return stacked
 
-def make_jpg(conf, prefix, array_images, cap_texts, episode_count, highlight = False):
+def make_jpg(conf, prefix, array_images, cap_texts, cap_colors, episode_count):
     images = []
     for im in array_images:
         images.append(Image.fromarray(im))
 
-    stacked = make_image(images, cap_texts, highlight)
+    stacked = make_image(images, cap_texts, cap_colors)
     stacked.save(conf.frames_path + "/" +  prefix + str(episode_count)+'.jpg')
 
 def vstack_images(images):

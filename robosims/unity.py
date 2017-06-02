@@ -9,14 +9,14 @@ import pickle
 class DatasetInfo:
     def __init__(self, conf):
         self.max_distance_delta = conf.max_distance_delta
-        self.max_rotation_delta = conf.max_distance_delta
+        self.max_rotation_delta = conf.max_rotation_delta
 
     def check(self, conf):
         if self.max_distance_delta != conf.max_distance_delta:
             raise ValueError("max_distance_delta {} inconsistent with index {}".
                             format(conf.max_distance_delta, self.max_distance_delta))
         
-        if self.max_rotation_delta != conf.max_distance_delta:
+        if self.max_rotation_delta != conf.max_rotation_delta:
             raise ValueError("max_rotation_delta {} inconsistent with index {}".
                             format(conf.max_rotation_delta, self.max_rotation_delta))
 
