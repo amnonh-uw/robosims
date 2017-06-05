@@ -140,9 +140,8 @@ class UnityGame:
 
         return b
 
-    def new_episode(self, close_enough = False, too_far = False):
-        self.close_enough_episode = close_enough
-        self.too_far_episode = too_far
+    def new_episode(self)
+
         if self.controller == None:
             if self.episode_counter == self.index.size:
                 raise ValueError("number of episodes in data set exceeded")
@@ -153,7 +152,18 @@ class UnityGame:
             self.remove_private_members(tmp_dict)
             self.__dict__.update(tmp_dict) 
         else:
+            close_enough = False
+            too_far = False
+
+            r = random.random()
+            if r < self.conf.close_enough_prob:
+                close_enough = True
+            elif r < (self.conf.too_far_prob + self.conf.close_enough_prob):
+                too_far = True
+
             self.gen_new_episode(close_enough = close_enough, too_far = too_far)
+            self.close_enough_episode = close_enough
+            self.too_far_episode = too_far
 
         self.episode_finished = False
         self.collision = False
