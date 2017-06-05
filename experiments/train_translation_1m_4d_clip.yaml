@@ -1,6 +1,6 @@
 learning_rate: 1.e-5
 model: translation
-postfix: translation_1m_4d
+postfix: translation_1m_4d_clip
 dataset: datasets/1m_20deg
 max_distance_delta: 1.
 max_rotation_delta: 20.

@@ -22,7 +22,7 @@ def train_regression(args, model_cls):
             exit()
 
     cheat = conf.cheat
-    model = model_cls(conf, cls, cheat=cheat, trainable=True)
+    model = model_cls(conf, cls, cheat=cheat, trainable=conf.trainable)
     make_dirs(model.name(), args)
 
     # Create an optimizer.

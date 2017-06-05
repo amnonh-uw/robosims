@@ -9,7 +9,7 @@ batch_size: 32
 epochs: 25
 pose_dims: 0
 batch_size: 32
-model_save_frequency: 1000
+model_save_frequency: 5000
 flush_plot_frequency: 100
 close_enough_distance: 0.05
 close_enough_rotation: 1.

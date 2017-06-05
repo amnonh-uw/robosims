@@ -115,6 +115,7 @@ class config(EasyDict):
 
 
         self.model = None
+        self.trainable = True
 
         # a3c
         self.num_workers = 1
