@@ -1,7 +1,9 @@
 learning_rate: 1.e-5
-postfix: train_strategy
+postfix: strategy
 model: class
 dataset: datasets/strategy
+close_enough_prob: 0.33
+too_far_prob: 0.33
 max_distance_delta: 1.
 max_rotation_delta: 0
 iter: 40000

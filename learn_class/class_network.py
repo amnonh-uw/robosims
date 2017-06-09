@@ -68,7 +68,8 @@ class Class_Model:
             s = 'wrong ({} vs {}'.format(pred_class, true_class)
             return [s], ["red"]
         else:
-            return ["right"], ["white"]
+            s = 'right ({})'.format(pred_class)
+            return [s], ["white"]
             
     def name(self):
         return "class"

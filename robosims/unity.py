@@ -5,13 +5,29 @@ import robosims.server
 from robosims.actions import *
 import pickle
 
+version = 1
 
 class DatasetInfo:
     def __init__(self, conf):
+        self.version = version
         self.max_distance_delta = conf.max_distance_delta
         self.max_rotation_delta = conf.max_rotation_delta
-
+        self.too_far_prob = conf.too_far_prob
+        self.close_enough_prob = conf.close_enough_prob
+    
     def check(self, conf):
+        if self.version != version:
+            raise ValueError("version {} inconsistent with index {}".
+                            format(version, self.version))
+
+        if self.too_far_prob != conf.too_far_prob:
+            raise ValueError("too_far_prob {} inconsistent with index {}".
+                            format(conf.too_far_prob, self.too_far_prob))
+
+        if self.close_enough_prob != conf.close_enough_prob:
+            raise ValueError("close_enough_prob {} inconsistent with index {}".
+                            format(conf.close_enough_prob, self.close_enough_prob))
+
         if self.max_distance_delta != conf.max_distance_delta:
             raise ValueError("max_distance_delta {} inconsistent with index {}".
                             format(conf.max_distance_delta, self.max_distance_delta))
@@ -140,8 +156,7 @@ class UnityGame:
 
         return b
 
-    def new_episode(self)
-
+    def new_episode(self):
         if self.controller == None:
             if self.episode_counter == self.index.size:
                 raise ValueError("number of episodes in data set exceeded")
