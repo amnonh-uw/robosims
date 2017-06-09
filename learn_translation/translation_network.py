@@ -56,7 +56,7 @@ class Translation_Model:
         return(self.loss)
 
     def rescale_value(self, dims):
-        rescale = [1, 1, 1, 2*math.pi/360]
+        rescale = [1, 1, 1, 0.5]
         return(rescale[:dims])
 
     def true_value(self, env):
@@ -81,7 +81,7 @@ class Translation_Model:
         strings = []
         colors = []
 
-        texts = ["x err:", "y err:", "z err:", "r err:"]
+        texts = ["x {} err:", "y {} err:", "z {} err:", "r {} err:"]
         for i in range(0,self.pose_dims):
             if i <= 3:
                 highlight_absolute_error = self.highlight_pos_absolute_error
@@ -98,7 +98,7 @@ class Translation_Model:
                 if relative_err > highlight_relative_error:
                     color = "red"
 
-            s = texts[i]
+            s = texts[i].format(pred_translation[0,i])
             s += str(round(relative_err, 2) *100) + "% "
             s += '('
             s += str(round(absolute_err, 2))
