@@ -1,7 +1,7 @@
 if [ "$#" -eq 2 ]; then
     x=$1
     i=$2
-    dataset=`fgrep dataset $i | awk '{ print $2 }'`
+    dataset=`fgrep dataset $i | sed -e 's/dataset: //' | sed -e 's/datasets\///'`
     rm -f datasets/$dataset.data
     rm -f datasets/$dataset.idx
     rm -f $x/$dataset.data
@@ -9,7 +9,7 @@ if [ "$#" -eq 2 ]; then
     touch $x/$dataset.data
     touch $x/$dataset.idx
     ln -s $x/$dataset.data datasets/$dataset.data
-    ln -s $x/$dataset.idx datasets/$dataset.data
+    ln -s $x/$dataset.idx datasets/$dataset.idx
     invoke gen_train_dataset --config=$i &> datasets/gen_$dataset.out
     exit
 fi
@@ -22,8 +22,7 @@ x=$1
 
 for i in gen_dataset/*.yaml
 do
-    k=`fgrep dataset $i sed -e 's/dataset: //'`
-    echo Generating $k in the background
-    bash gen_all.bash $x $k &
+    echo Generating $i in the background
+    bash gen_all.bash $x $i &
     sleep 3
 done

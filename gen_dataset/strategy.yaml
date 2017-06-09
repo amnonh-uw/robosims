@@ -5,7 +5,7 @@ probe_distance: 1.
 # grid
 grid_distance: 0.01
 grid_rotation: 0.1
-dataset: strategy
+dataset: datasets/strategy
 close_enough_prob: 0.5
 iter: 40000
 close_enough_distance: 0.05

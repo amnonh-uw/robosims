@@ -54,7 +54,6 @@ class Class_Model:
 
     def true_value(self, env):
         return env.get_class(dims=self.pose_dims)
-        #return np.reshape(env.get_class(dims=self.pose_dims), [1])
 
     def cheat_value(self, env):
         return self.true_value(env)
@@ -62,13 +61,14 @@ class Class_Model:
     def cheat_tensor(self):
         return self.cheat_class
 
-    def error_str(self, true_class, pred_softmax):
+    def error_strings(self, true_class, pred_softmax):
         pred_class = np.argmax(pred_softmax)
 
         if pred_class != true_class:
-            return 'wrong ({} vs {}'.format(pred_class, true_class), True
+            s = 'wrong ({} vs {}'.format(pred_class, true_class)
+            return [s], ["red"]
         else:
-            return 'right', False
+            return ["right"], ["white"]
             
     def name(self):
         return "class"
@@ -104,7 +104,7 @@ class Class_Network:
                 biases_initializer=None, scope='hidden_vector')
 
             if self.pose_dims == 0:
-                num_classes = 2
+                num_classes = 3
             else:
                 num_classes = self.pose_dims*2+1
             self.pred_logits = slim.fully_connected(hidden, num_classes,

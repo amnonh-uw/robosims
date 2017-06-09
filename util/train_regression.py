@@ -22,7 +22,7 @@ def train_regression(args, model_cls):
             exit()
 
     cheat = conf.cheat
-    model = model_cls(conf, cls, cheat=cheat, trainable=True)
+    model = model_cls(conf, cls, cheat=cheat, trainable=conf.trainable)
     make_dirs(model.name(), args)
 
     # Create an optimizer.
@@ -136,6 +136,7 @@ def train_regression(args, model_cls):
                     if conf.check_gradients:
                         check_grad(sess, grads_and_vars, feed_dict)
 
+                    # do we need predicted values here?
                     _, loss, pred_values, errors, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
@@ -195,7 +196,7 @@ def train_regression(args, model_cls):
             if env != None:
                 env.close()
 
-def predict(sess, t, s, model, cls):
+def predict(sess, t, s, model, cls, env):
     t_input = np.expand_dims(process_frame(t, cls), axis=0)
     s_input = np.expand_dims(process_frame(s, cls), axis=0)
 
@@ -225,37 +226,62 @@ def test(conf, sess, model, cls, steps = 0):
     print("testing... {} iterations".format(test_iter))
     env = UnityGame(conf, dataset=conf.test_dataset, num_iter=test_iter, randomize=False)
 
+    def empty_strings(n):
+        l = []
+        for k in range(n):
+            l.append("")
+        return l
+
+    def empty_colors(n):
+        l = []
+        for k in range(n):
+            l.append("white")
+        return l
+
     for episode_count in range(0, test_iter):
         env.new_episode()
         t = env.get_state().target_buffer()
         s = env.get_state().source_buffer()
-        pred_value = predict(sess, t, s,  model, cls)
+        pred_value = predict(sess, t, s,  model, cls, env)
         true_value = np.expand_dims(model.true_value(env), axis=0)
-        highlight = False
 
         images = [t, s]
-        err_str, h = model.error_str(true_value, pred_value)
-        highlight = highlight or h
-        cap_texts = ["target:" + env.target_str(), "source:" + env.source_str()]
-        cap_texts2 = [ err_str, "" ]
+
+        cap_texts = [("target:" + env.target_str())]
+        cap_colors = ["white"]
+        err_strings, err_colors = model.error_strings(true_value, pred_value)
+        cap_texts.extend(err_strings)
+        cap_colors.extend(err_colors)
+        images_cap_texts = [cap_texts]
+        images_cap_colors = [cap_colors]
+
+        cap_texts = ["source:" + env.source_str()]
+        cap_texts.extend(empty_strings(len(err_strings)))
+        cap_colors = ["white"]
+        cap_colors.extend(empty_colors(len(err_strings)))
+        images_cap_texts.append(cap_texts)
+        images_cap_colors.append(cap_colors)
 
         if steps == 0:
-            make_jpg(conf, "test_set_", images, cap_texts, cap_texts2,  episode_count, highlight = highlight)
+            make_jpg(conf, "test_set_", images, images_cap_texts,  images_cap_colors, episode_count)
         else:
             for step in range(steps):
                 pred_value = np.squeeze(pred_value)
                 model.take_prediction_step(env, pred_value)
-                env.take_prediction_step(pred_value)
                 image = env.get_state().source_buffer()
                 images.append(image)
-                pred_value = predict(sess, t, image, model, cls)
-                true_value = np.expand_dims(model.true_value(env), axis=0)
-                err_str, h = model.error_str(true_value, pred_value)
-                highlight = highlight or h
-                cap_texts.append("step {}:{}".format(step+1, env.source_str()))
-                cap_texts2.append(err_str)
 
-            make_jpg(conf, "test_set_steps_", images, cap_texts, cap_texts2, episode_count, highlight = highlight)
+                pred_value = predict(sess, t, image, model, cls, env)
+                true_value = np.expand_dims(model.true_value(env), axis=0)
+                err_strings, err_colors = model.error_strings(true_value, pred_value)
+                cap_texts = [("step {}:{}".format(step+1, env.source_str()))]
+                cap_texts.extend(err_strings)
+                cap_colors = ["white"]
+                cap_colors.extend(err_colors)
+                images_cap_texts.append(cap_texts)
+                images_cap_colors.append(cap_colors)
+
+            make_jpg(conf, "test_set_steps_", images, images_cap_texts, images_cap_colors, episode_count)
 
     env.close()
 

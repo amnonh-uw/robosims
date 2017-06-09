@@ -1,7 +1,7 @@
 learning_rate: 1.e-5
 postfix: train_strategy
 model: class
-dataset: strategy
+dataset: datasets/strategy
 max_distance_delta: 1.
 max_rotation_delta: 0
 iter: 40000
@@ -9,7 +9,9 @@ batch_size: 32
 epochs: 25
 pose_dims: 0
 batch_size: 32
-model_save_frequency: 1000
+model_save_frequency: 5000
 flush_plot_frequency: 100
 close_enough_distance: 0.05
 close_enough_rotation: 1.
+max_rotation_delta: 20.
+test_steps: 0

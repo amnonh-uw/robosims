@@ -9,14 +9,14 @@ import pickle
 class DatasetInfo:
     def __init__(self, conf):
         self.max_distance_delta = conf.max_distance_delta
-        self.max_rotation_delta = conf.max_distance_delta
+        self.max_rotation_delta = conf.max_rotation_delta
 
     def check(self, conf):
         if self.max_distance_delta != conf.max_distance_delta:
             raise ValueError("max_distance_delta {} inconsistent with index {}".
                             format(conf.max_distance_delta, self.max_distance_delta))
         
-        if self.max_rotation_delta != conf.max_distance_delta:
+        if self.max_rotation_delta != conf.max_rotation_delta:
             raise ValueError("max_rotation_delta {} inconsistent with index {}".
                             format(conf.max_rotation_delta, self.max_rotation_delta))
 
@@ -100,28 +100,20 @@ class UnityGame:
         if dims == 3:
             return(delta_xyz)
         if dims == 4:
-            # move r to [-1,1]
             r = delta_pqr[1]
-            r = r / self.conf.max_rotation_delta
             return np.append(delta_xyz, r)
 
         raise ValueError("dim must be 1, 3 or 4")
-
-    def recalibrate(self, poses, dims=3):
-        # switch r back from [-1,1]
-        if dims == 4:
-            for i in range(poses.shape[0]):
-                poses[i, 3] *= self.conf.max_rotation_delta
-
-        return poses
-
 
     def get_class(self, dims=3):
         if dims == 0:
             if self.all_close_enough():
                 cls = 1
+            elif self.too_far_episode:
+                cls = 2
             else:
                 cls = 0
+
         else:
             delta = self.translation(dims=dims)
             cls = np.argmax(delta)
@@ -148,7 +140,8 @@ class UnityGame:
 
         return b
 
-    def new_episode(self, close_enough = False, too_far = False):
+    def new_episode(self)
+
         if self.controller == None:
             if self.episode_counter == self.index.size:
                 raise ValueError("number of episodes in data set exceeded")
@@ -159,10 +152,22 @@ class UnityGame:
             self.remove_private_members(tmp_dict)
             self.__dict__.update(tmp_dict) 
         else:
-            self.episode_finished = False
+            close_enough = False
+            too_far = False
+
+            r = random.random()
+            if r < self.conf.close_enough_prob:
+                close_enough = True
+            elif r < (self.conf.too_far_prob + self.conf.close_enough_prob):
+                too_far = True
+
             self.gen_new_episode(close_enough = close_enough, too_far = too_far)
-            self.collision = False
-            self.action_counter = 0
+            self.close_enough_episode = close_enough
+            self.too_far_episode = too_far
+
+        self.episode_finished = False
+        self.collision = False
+        self.action_counter = 0
 
     def get_state(self):
         return UnityState(self.s_frame, self.t_frame, self.collision)
@@ -407,8 +412,8 @@ class UnityGame:
         return (x, y, z, r)
 
     def random_target_pose(self, close_enough = False, too_far = False):
-        if too_far:
-            raise NotImplementedError("too_far has not been implemented yet")
+        if too_far and close_enough:
+            raise ValueError("too_far and close_enough cannot both be True")
 
         if close_enough:
             distance_range = self.conf.close_enough_distance
@@ -421,6 +426,9 @@ class UnityGame:
         y = self.uniform_delta(distance_range, self.s_y, self.min_y, self.max_y, self.conf.grid_distance)
         z = self.uniform_delta(distance_range, self.s_z, self.min_z, self.max_z, self.conf.grid_distance)
         r = self.uniform_delta(rotation_range, self.s_r, self.min_r, self.max_r, self.conf.grid_rotation)
+
+        if too_far:
+            r = 180
 
         return (x, y, z, r)
 

@@ -7,4 +7,4 @@ epochs: 1
 # grid
 grid_distance: 0.01
 grid_rotation: 0.1
-dataset: test_1m_20deg
+dataset: datasets/test_1m_20deg

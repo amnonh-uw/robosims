@@ -32,13 +32,7 @@ def gen_dataset(argv):
 
     with open(data_file, 'wb') as data:
         for i in range(0, train_iter):
-            r = random.random()
-            if r < conf.close_enough_prob:
-                env.new_episode(close_enough=True)
-            elif r < (conf.too_far_prob + conf.close_enough_prob):
-                env.new_episode(too_far=True)
-            else:
-                env.new_episode()
+            env.new_episode()
             index[i] = data.tell()
             pickle.dump(env, data, pickle.HIGHEST_PROTOCOL)
 

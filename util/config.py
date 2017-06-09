@@ -108,11 +108,14 @@ class config(EasyDict):
         self.verify_iter = 0
         self.verify_frequencey = 500000
         self.pose_dims = 3
-        self.highlight_absolute_error = 0.1
-        self.highlight_relative_error = 0.25
+        self.highlight_pos_absolute_error = 0.1
+        self.highlight_pos_relative_error = 0.25
+        self.highlight_rot_absolute_error = 2
+        self.highlight_rot_relative_error = 0.25
 
 
         self.model = None
+        self.trainable = True
 
         # a3c
         self.num_workers = 1
