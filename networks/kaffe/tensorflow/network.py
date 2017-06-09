@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import math
 
 DEFAULT_PADDING = 'SAME'
 
@@ -128,6 +129,25 @@ class Network(object):
         '''Verifies that the padding is one of the supported ones.'''
         assert padding in ('SAME', 'VALID')
 
+
+    def make_deconv_filter(self, name, f_shape):
+        width = f_shape[0]
+        heigh = f_shape[0]
+        f = math.ceil(width/2.0)
+        c = (2 * f - 1 - f % 2) / (2.0 * f)
+        bilinear = np.zeros([f_shape[0], f_shape[1]])
+        for x in range(width):
+            for y in range(heigh):
+                value = (1 - abs(x / f - c)) * (1 - abs(y / f - c))
+                bilinear[x, y] = value
+        weights = np.zeros(f_shape)
+        for i in range(f_shape[2]):
+            weights[:, :, i, i] = bilinear
+
+        init = tf.constant_initializer(value=weights, dtype=tf.float32)
+        var = tf.get_variable(name, shape=weights.shape, initializer=init, trainable=self.trainable)
+        return var
+
     @layer
     def conv(self,
              input,
@@ -170,6 +190,62 @@ class Network(object):
                 # ReLU non-linearity
                 output = tf.nn.relu(output, name=scope.name)
             return output
+
+    @layer
+    def deconv(self,
+               input,
+               k_h,
+               k_w,
+               c_o,
+               s_h,
+               s_w,
+               name,
+               relu=True,
+               padding=DEFAULT_PADDING,
+               group=1,
+               biased=True):
+        # Verify that the padding is acceptable
+        self.validate_padding(padding)
+        # Get the number of channels in the input
+        c_i = input.get_shape()[-1]
+        # Verify that the grouping parameter is valid
+        assert c_i % group == 0
+        assert c_o % group == 0
+
+        with tf.variable_scope(name) as scope:
+            # Compute output shape of input as tensor
+            in_shape = tf.shape(input)
+            h = in_shape[1] * s_h
+            w = in_shape[2] * s_w
+            new_shape = [in_shape[0], h, w, c_o]
+            output_shape = tf.stack(new_shape)
+
+            # compute output shape of input as list
+            l_in_shape = input.get_shape().as_list()
+            l_h = l_in_shape[1] * s_h
+            l_w = l_in_shape[2] * s_w
+            l0 = l_in_shape[0]
+            if l0 == None:
+                l0 = -1
+            l_new_shape = [l0, l_h, l_w, c_o]
+
+            # filter
+            f_shape = [k_h, k_w, c_o, c_i]
+            weights = self.make_deconv_filter('weights', f_shape)
+            output = tf.nn.conv2d_transpose(input, weights, output_shape, [1, s_h, s_w, 1], padding=padding,  name=scope.name)
+
+            output = tf.reshape(output, l_new_shape)
+        
+            # Add the biases
+            if biased:
+                biases = self.make_var('biases', [c_o])
+                output = tf.nn.bias_add(output, biases)
+
+            # ReLU non-linearity
+            if relu:
+                output = tf.nn.relu(output, name=scope.name)
+
+        return output
 
     @layer
     def relu(self, input, name):
@@ -223,8 +299,16 @@ class Network(object):
 
 
     @layer
-    def add(self, inputs, name):
-        return tf.add_n(inputs, name=name)
+    def add(self, inputs, name, coeff=None):
+        if isinstance(inputs, list):
+            if coeff != None:
+                assert "coeff not None and input is list not implemnted"
+            else:
+                return tf.add_n(inputs, name=name)
+        else:
+            assert coeff != None
+            return tf.multiply(inputs, coeff, name=name)
+
 
     @layer
     def fc(self, input, num_out, name, relu=True):

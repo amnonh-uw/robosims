@@ -15,7 +15,7 @@ LAYER_DESCRIPTORS = {
     'Concat': shape_concat,
     'ContrastiveLoss': shape_scalar,
     'Convolution': shape_convolution,
-    'Deconvolution': shape_not_implemented,
+    'Deconvolution': shape_deconvolution,
     'Data': shape_data,
     'Dropout': shape_identity,
     'DummyData': shape_data,
@@ -49,6 +49,7 @@ LAYER_DESCRIPTORS = {
     'TanH': shape_identity,
     'WindowData': shape_not_implemented,
     'Threshold': shape_identity,
+    'PReLU': shape_identity,
 }
 
 LAYER_TYPES = LAYER_DESCRIPTORS.keys()
@@ -107,6 +108,9 @@ class LayerAdapter(object):
     @property
     def parameters(self):
         name = NodeDispatch.get_handler_name(self.kind)
+        if name == 'deconvolution':
+            name = 'convolution'
+
         name = '_'.join((name, 'param'))
         try:
             return getattr(self.layer, name)
@@ -132,7 +136,7 @@ class LayerAdapter(object):
 
     @property
     def kernel_parameters(self):
-        assert self.kind in (NodeKind.Convolution, NodeKind.Pooling)
+        assert self.kind in (NodeKind.Convolution, NodeKind.Pooling, NodeKind.Deconvolution)
         params = self.parameters
         k_h = self.get_kernel_value(params.kernel_h, params.kernel_size, 0)
         k_w = self.get_kernel_value(params.kernel_w, params.kernel_size, 1)

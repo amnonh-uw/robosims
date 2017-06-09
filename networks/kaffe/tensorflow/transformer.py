@@ -9,7 +9,7 @@ from ..transformers import (DataInjector, DataReshaper, NodeRenamer, ReLUFuser,
 from . import network
 
 
-def get_padding_type(kernel_params, input_shape, output_shape):
+def get_padding_type(kernel_params, input_shape, output_shape, transpose=False):
     '''Translates Caffe's numeric padding to one of ('SAME', 'VALID').
     Caffe supports arbitrary padding values, while TensorFlow only
     supports 'SAME' and 'VALID' modes. So, not all Caffe paddings
@@ -18,14 +18,24 @@ def get_padding_type(kernel_params, input_shape, output_shape):
     https://github.com/Yangqing/caffe2/blob/master/caffe2/proto/caffe2_legacy.proto
     '''
     k_h, k_w, s_h, s_w, p_h, p_w = kernel_params
-    s_o_h = np.ceil(input_shape.height / float(s_h))
-    s_o_w = np.ceil(input_shape.width / float(s_w))
+    if transpose:
+        s_o_h = np.ceil(input_shape.height * float(s_h))
+        s_o_w = np.ceil(input_shape.width * float(s_w))
+    else:
+        s_o_h = np.ceil(input_shape.height / float(s_h))
+        s_o_w = np.ceil(input_shape.width / float(s_w))
     if (output_shape.height == s_o_h) and (output_shape.width == s_o_w):
         return 'SAME'
-    v_o_h = np.ceil((input_shape.height - k_h + 1.0) / float(s_h))
-    v_o_w = np.ceil((input_shape.width - k_w + 1.0) / float(s_w))
+
+    if transpose:
+        v_o_h = np.ceil((input_shape.height - k_h + 1.0) * float(s_h))
+        v_o_w = np.ceil((input_shape.width - k_w + 1.0) * float(s_w))
+    else:
+        v_o_h = np.ceil((input_shape.height - k_h + 1.0) / float(s_h))
+        v_o_w = np.ceil((input_shape.width - k_w + 1.0) / float(s_w))
     if (output_shape.height == v_o_h) and (output_shape.width == v_o_w):
         return 'VALID'
+
     return None
 
 
@@ -77,10 +87,10 @@ class MaybeActivated(object):
 
 class TensorFlowMapper(NodeMapper):
 
-    def get_kernel_params(self, node):
+    def get_kernel_params(self, node, transpose=False):
         kernel_params = node.layer.kernel_parameters
         input_shape = node.get_only_parent().output_shape
-        padding = get_padding_type(kernel_params, input_shape, node.output_shape)
+        padding = get_padding_type(kernel_params, input_shape, node.output_shape, transpose)
         # Only emit the padding if it's not the default value.
         padding = {'padding': padding} if padding != network.DEFAULT_PADDING else {}
         return (kernel_params, padding)
@@ -101,9 +111,28 @@ class TensorFlowMapper(NodeMapper):
         return MaybeActivated(node)('conv', kernel_params.kernel_h, kernel_params.kernel_w, c_o,
                                     kernel_params.stride_h, kernel_params.stride_w, **kwargs)
 
+    def map_deconvolution(self, node):
+        (kernel_params, kwargs) = self.get_kernel_params(node, transpose=True)
+        h = kernel_params.kernel_h
+        w = kernel_params.kernel_w
+        c_o = node.output_shape[1]
+        c_i = node.parents[0].output_shape[1]
+        group = node.parameters.group
+        if group != 1:
+            kwargs['group'] = group
+        if not node.parameters.bias_term:
+            kwargs['biased'] = False
+        assert kernel_params.kernel_h == h
+        assert kernel_params.kernel_w == w
+        return MaybeActivated(node)('deconv', kernel_params.kernel_h, kernel_params.kernel_w, c_o,
+                                    kernel_params.stride_h, kernel_params.stride_w, **kwargs)
+
     def map_relu(self, node):
         return TensorFlowNode('relu')
 
+    def map_p_re_lu(self, node):
+        return TensorFlowNode('prelu')
+       
     def map_pooling(self, node):
         pool_type = node.parameters.pool
         if pool_type == 0:
@@ -146,6 +175,7 @@ class TensorFlowMapper(NodeMapper):
         return TensorFlowNode('dropout', node.parameters.dropout_ratio)
 
     def map_batch_norm(self, node):
+        print("batch norm: node is {}".format(node))
         scale_offset = len(node.data) == 4
         kwargs = {} if scale_offset else {'scale_offset': False}
         return MaybeActivated(node, default=False)('batch_normalization', **kwargs)
@@ -154,7 +184,7 @@ class TensorFlowMapper(NodeMapper):
         operations = {0: 'multiply', 1: 'add', 2: 'max'}
         op_code = node.parameters.operation
         try:
-            return TensorFlowNode(operations[op_code])
+            return TensorFlowNode(operations[op_code], coeff=node.parameters.coeff[0])
         except KeyError:
             raise KaffeError('Unknown elementwise operation: {}'.format(op_code))
 
@@ -234,11 +264,12 @@ class TensorFlowTransformer(object):
         transformers = [
             # Fuse split batch normalization layers
             BatchNormScaleBiasFuser(),
+            BatchNormPreprocessor(),
 
             # Fuse ReLUs
             # TODO: Move non-linearity application to layer wrapper, allowing
             # any arbitrary operation to be optionally activated.
-            ReLUFuser(allowed_parent_types=[NodeKind.Convolution, NodeKind.InnerProduct,
+            ReLUFuser(allowed_parent_types=[NodeKind.Convolution, NodeKind.Deconvolution, NodeKind.InnerProduct,
                                             NodeKind.BatchNorm]),
 
             # Rename nodes
@@ -262,12 +293,13 @@ class TensorFlowTransformer(object):
                     # (c_o, c_i, h, w) -> (h, w, c_i, c_o)
                     NodeKind.Convolution: (2, 3, 1, 0),
 
+                    # (c_o, c_i, h, w) -> (h, w, c_i, c_o)
+                    NodeKind.Deconvolution: (2, 3, 1, 0),
+
                     # (c_o, c_i) -> (c_i, c_o)
                     NodeKind.InnerProduct: (1, 0)
                 }),
 
-                # Pre-process batch normalization data
-                BatchNormPreprocessor(),
 
                 # Convert parameters to dictionaries
                 ParameterNamer(),

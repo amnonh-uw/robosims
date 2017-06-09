@@ -30,8 +30,10 @@ class DataInjector(object):
 
     def load(self):
         if has_pycaffe():
+            print_stderr("loading using cafffe")
             self.load_using_caffe()
         else:
+            print_stderr("loading using pb")
             self.load_using_pb()
 
     def load_using_caffe(self):
@@ -217,10 +219,12 @@ class BatchNormScaleBiasFuser(SubNodeFuser):
     '''
 
     def is_eligible_pair(self, parent, child):
-        return (parent.kind == NodeKind.BatchNorm and child.kind == NodeKind.Scale and
+        return(parent.kind == NodeKind.BatchNorm and child.kind == NodeKind.Scale and
                 child.parameters.axis == 1 and child.parameters.bias_term == True)
 
+
     def merge(self, parent, child):
+        print("merging {} and {}".format(parent, child))
         parent.scale_bias_node = child
 
 
@@ -231,6 +235,7 @@ class BatchNormPreprocessor(object):
     '''
 
     def __call__(self, graph):
+        print("BatchNormPreprocessor is running!")
         for node in graph.nodes:
             if node.kind != NodeKind.BatchNorm:
                 continue
@@ -247,6 +252,9 @@ class BatchNormPreprocessor(object):
                 # Include the scale and bias terms
                 gamma, beta = node.scale_bias_node.data
                 node.data += [gamma, beta]
+                print("addding scale_bias_node data")
+                print("node is ".format(node))
+                print("node data is {}".format(node.data))
         return graph
 
 
@@ -274,7 +282,7 @@ class ParameterNamer(object):
         for node in graph.nodes:
             if node.data is None:
                 continue
-            if node.kind in (NodeKind.Convolution, NodeKind.InnerProduct):
+            if node.kind in (NodeKind.Convolution, NodeKind.Deconvolution, NodeKind.InnerProduct):
                 names = ('weights',)
                 if node.parameters.bias_term:
                     names += ('biases',)
@@ -282,6 +290,8 @@ class ParameterNamer(object):
                 names = ('mean', 'variance')
                 if len(node.data) == 4:
                     names += ('scale', 'offset')
+                elif node.kind == NodeKind.PReLU:
+                    names = ('alpha',)
             else:
                 print_stderr('WARNING: Unhandled parameters: {}'.format(node.kind))
                 continue

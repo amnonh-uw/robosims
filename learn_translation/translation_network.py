@@ -96,14 +96,18 @@ class Translation_Network():
     def __init__(self, conf, cls, scope, phase, cheat = None, trainable=True, pose_dims=3):
         self.scope = scope
         self.pose_dims = conf.pose_dims
+        self.single_image = cls.single_image()
 
         with tf.variable_scope(scope):
             #Input and visual encoding layers
 
-            self.s_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="s_input")
-            self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
+            v_size = cls.preprocess_size(conf.v_size)
+            h_size = cls.preprocess_size(conf.h_size)
 
-            if cls.single_image():
+            self.s_input = tf.placeholder(shape=[None,v_size,h_size,conf.channels],dtype=tf.float32, name="s_input")
+            self.t_input = tf.placeholder(shape=[None,v_size,h_size,conf.channels],dtype=tf.float32, name="t_input")
+
+            if self.single_image:
                 with tf.variable_scope("siamese_network"):
                     self.source_net = cls({'data': self.s_input}, phase, trainable=trainable)
 
@@ -118,34 +122,33 @@ class Translation_Network():
                     combined = tf.concat(values=[self.t_out, self.s_out, cheat], axis=1)
                 else:
                      combined = tf.concat(values=[self.t_out, self.s_out], axis=1)
+            else:
+                self.net = cls({'data1': self.s_input, 'data2' : self.t_input}, phase, trainable=trainable)
+                if cheat is not None:
+                    print("Translation network cheating....")
+                    combined = tf.concat(values=[self.t_out, self.s_out, cheat], axis=1)
+                else:
+                    combined = flatten(self.net.get_output())
 
-                hidden = slim.fully_connected(combined, 1024,
+            hidden = slim.fully_connected(combined, 1024,
                     activation_fn=None,
                     # activation_fn=tf.nn.elu,
                     weights_initializer=normalized_columns_initializer(1.0),
                     biases_initializer=None, scope='hidden_vector')
 
-                self.translation_pred = slim.fully_connected(hidden,self.pose_dims,
+            self.translation_pred = slim.fully_connected(hidden,self.pose_dims,
                     activation_fn=None,
                     # activation_fn=tf.nn.elu,
                     weights_initializer=normalized_columns_initializer(1.0),
                     biases_initializer=None, scope='translation_pred')
-            else:
-                self.net = cls({'image_data': self.s_input, 'image_data_pert' : self.t_input}, phase, trainable=trainable)
-                self.translation_pred = self.net.position_tensor()
-                if cheat is not None:
-                    zeros = tf.zeros([1,self.pose_dims])
-                    print("Translation network cheating....")
-                    combined = tf.concat(values=[zeros, cheat], axis=1)
-                    self.translation_pred = slim.fully_connected(combined,self.pose_dims,
-                        activation_fn=None,
-                        weights_initializer=normalized_columns_initializer(1.0),
-                         biases_initializer=None, scope='translation_pred')
 
     def get_output(self):
         return(self.translation_pred)
 
     def load(self, data_path, session, ignore_missing=False):
         with tf.variable_scope(self.scope):
-            with tf.variable_scope("siamese_network"):
-                self.source_net.load(data_path, session, ignore_missing)
+            if self.single_image:
+                with tf.variable_scope("siamese_network"):
+                    self.source_net.load(data_path, session, ignore_missing)
+            else:
+                self.net.load(data_path, session, ignore_missing)
