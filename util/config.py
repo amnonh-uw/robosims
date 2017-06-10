@@ -122,10 +122,8 @@ class config(EasyDict):
         self.max_episode_length = 100
         self.episode_buffer_size = 10
 
-        # image resolution
-        self.h_size = 400
-        self.v_size = 300
-        self.channels = 3
+        # image shape
+        self.image_shape = [300, 400, 3]
 
         self.sensors = 1
         self.gamma = 0.99

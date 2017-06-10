@@ -125,11 +125,9 @@ class Translation_Network():
         with tf.variable_scope(scope):
             #Input and visual encoding layers
 
-            v_size = cls.preprocess_size(conf.v_size)
-            h_size = cls.preprocess_size(conf.h_size)
-
-            self.s_input = tf.placeholder(shape=[None,v_size,h_size,conf.channels],dtype=tf.float32, name="s_input")
-            self.t_input = tf.placeholder(shape=[None,v_size,h_size,conf.channels],dtype=tf.float32, name="t_input")
+            input_shape = [None] + cls.preprocess_shape(conf.image_shape)
+            self.s_input = tf.placeholder(shape=input_shape,dtype=tf.float32, name="s_input")
+            self.t_input = tf.placeholder(shape=input_shape,dtype=tf.float32, name="t_input")
 
             if self.single_image:
                 with tf.variable_scope("siamese_network"):

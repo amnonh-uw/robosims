@@ -34,9 +34,9 @@ class AlexNet(Network):
         return np.array([[103.939, 116.779, 123.68]])
 
     @staticmethod
-    def preprocess_image(im, fixed_resolution=True):
+    def preprocess_image(im, keep_resolution=False):
         # assumes RGB
-        if fixed_resolution:
+        if !keep_resolution:
             im = np.copy(im).astype('uint8')
             # Resize so smallest dim = 256, preserving aspect ratio
             h, w, _ = im.shape

@@ -27,7 +27,7 @@ def classify(argv):
 
 
     im = load_image(args.image)
-    im = cls.preprocess_image(im, fixed_resolution=True)
+    im = cls.preprocess_image(im, fixed_resolution=False)
     im = np.expand_dims(im, axis=0)
     im_tensor = tf.placeholder(shape=im.shape,dtype=tf.float32, name="input")
 

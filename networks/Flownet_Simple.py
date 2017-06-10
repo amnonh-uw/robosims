@@ -1,6 +1,7 @@
 from kaffe.tensorflow import Network
 import math
 from PIL import Image
+import numpy as np
 
 class Flownet_Simple(Network):
     def setup(self):
@@ -62,48 +63,53 @@ class Flownet_Simple(Network):
              .conv(1, 1, 2, 1, 1, relu=False, name='Convolution6'))
 
     @staticmethod
-    def preprocess_size(v):
-        # flownet requires image height and width to be a multiple of 64
-        o = math.floor(v / 64) * 64
-        if v % 64 != 0:
-            o += 64
-        return o
+    def mean():
+        FLOWNET_SCALE = 0.0039216
+        FLOWNET_MEAN1 = [ 0.411451 * FLOWNET_SCALE, 0.432060 * FLOWNET_SCALE,  0.450141 * FLOWNET_SCALE ]
+        FLOWNET_MEAN2 = [ 0.410602 * FLOWNET_SCALE, 0.431021 * FLOWNET_SCALE,  0.448553 * FLOWNET_SCALE ]
+        return np.array(FLOWNET_MEAN1)
 
     @staticmethod
-    def preprocess_images(im1, im2):
-        FLOWNET_SCALE1 = 0.0039216
-        FLOWNET_MEAN1 = [ 0.411451 * FLOWNET_SCALE1, 0.432060 * FLOWNET_SCALE1,  0.450141 * FLOWNET_SCALE1 ]
-        FLOWNET_SCALE2 = 0.0039216
-        FLOWNET_MEAN2 = [ 0.410602 * FLOWNET_SCALE2, 0.431021 * FLOWNET_SCALE2,  0.448553 * FLOWNET_SCALE2 ]
+    def make_prod64(n):
+        n = int(n)
+        h = math.floor(n / 64) * 64
+        if n % 64 != 0:
+            h += 64
+
+        return h
+
+    @staticmethod
+    def preprocess_image(im, keep_resolution):
+        # unfortunately, we can't keep resolution the same in flow net
 
         # flownet requires image height and width to be a multiple of 64
-        original_height = int(im1.shape[1])
-        height = math.floor(original_height / 64) * 64
-        if original_height % 64 != 0:
-            height += 64
-
-        original_width = int(im2.shape[2])
-        width = math.floor(original_width / 64) * 64
-        if original_width % 64 != 0:
-            width += 64
+        height = Flownet_Simple.make_prod64(im.shape[0])
+        width = Flownet_Simple.make_prod64(im.shape[1])
 
         # resize
-        im1 = Image.fromarray(im1, 'RGB')
-        im1 = im1.resize((width, height), resample=PIL.Image.BILINEAR)
-        im2 = Image.fromarray(im1, 'RGB')
-        im2 = im2.resize((width, height), resample=PIL.Image.BILINEAR)
-        im1 = np.asarray(im1, dtype="float32")
-        im2 = np.asarray(im1, dtype="float32")
+        im = Image.fromarray(im, 'RGB')
+        im = im.resize((width, height), resample=Image.BILINEAR)
+        im = np.asarray(im, dtype="float32")
 
         # convert to BGR
-        im1 = im1[:,:,::-1]
-        im2 = im2[:,:,::-1]
+        im = im[:,:,::-1]
 
         # substract MEAN
-        im1 = im1 - FLOWNET_MEAN1
-        im2 = im2 - FLOWNET_MEAN2
+        # note - there are two means in flownet, we are ignoring one of them. They are close
+        im = im - Flownet_Simple.mean()
 
-        return (im1, im2)
+        return im
+
+    @staticmethod
+    def preprocess_shape(input_shape, keep_resolution=False):
+        # unfortunately, we can't keep resolution the same in flow net
+        # flownet requires image height and width to be a multiple of 64
+
+        output_shape = input_shape
+        output_shape[0] = Flownet_Simple.make_prod64(input_shape[0])
+        output_shape[1] = Flownet_Simple.make_prod64(input_shape[1])
+        
+        return output_shape
 
     def single_image():
         return False

@@ -256,7 +256,8 @@ def as_scalar(a):
     return as_vector(a, 1)
 
 def process_frame(frame, cls):
-    f =  frame.astype(float) - cls.mean()
+    f = frame.astype(float)
+    f = cls.preprocess_image(f, keep_resolution=True)
     return f
 
 def dataset_files(dataset):
