@@ -19,7 +19,10 @@ def parse_args(argv):
     parser.add_argument('--dataset', type=str, default=None)
     parser.add_argument('--postfix', type=str, default=None)
     parser.add_argument('--image', type=str, default=None)
+    parser.add_argument('--image1', type=str, default=None)
+    parser.add_argument('--image2', type=str, default=None)
     parser.add_argument('--base-class', type=str, default=None)
+    parser.add_argument('--output', type=str, default=None)
     parser.set_defaults(load_model=False)
     parser.set_defaults(test_only=False)
 

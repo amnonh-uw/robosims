@@ -32,7 +32,7 @@ def layer(op):
 
 class Network(object):
 
-    def __init__(self, inputs, phase, trainable=True, fixed_resolution=False):
+    def __init__(self, inputs, phase, trainable=False, fixed_resolution=False):
         # The input nodes for this network
         self.inputs = inputs
         # tensor telling us if we are training or testing (required for batch norm)
@@ -149,6 +149,11 @@ class Network(object):
         return var
 
     @layer
+    def resize(self, input, new_height, new_width, name):
+        with tf.variable_scope(name) as scope:
+            return tf.image.resize_images(input, [new_height, new_width])
+
+    @layer
     def conv(self,
              input,
              k_h,
@@ -158,9 +163,11 @@ class Network(object):
              s_w,
              name,
              relu=True,
+             alpha=None,
              padding=DEFAULT_PADDING,
              group=1,
-             biased=True):
+             biased=True,
+             weights=None):
         # Verify that the padding is acceptable
         self.validate_padding(padding)
         # Get the number of channels in the input
@@ -169,9 +176,20 @@ class Network(object):
         assert c_i % group == 0
         assert c_o % group == 0
         # Convolution for a given input and kernel
+
+        input = tf.Print(input, [input], "convolution input for " + name)
+
         convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding=padding)
         with tf.variable_scope(name) as scope:
-            kernel = self.make_var('weights', shape=[k_h, k_w, c_i / group, c_o])
+
+            if weights is None:
+                kernel = self.make_var('weights', shape=[k_h, k_w, c_i / group, c_o])
+            else:
+                weights = np.reshape(weights, [k_h, k_w, int(c_i / group), c_o])
+                kernel = tf.constant(weights, dtype=tf.float32)
+
+            kernel = tf.Print(kernel, [kernel], "kernel for " + name)
+
             if group == 1:
                 # This is the common-case. Convolve the input without any further complications.
                 output = convolve(input, kernel)
@@ -185,10 +203,22 @@ class Network(object):
             # Add the biases
             if biased:
                 biases = self.make_var('biases', [c_o])
+                biases = tf.Print(biases, [biases], "biases for " +  name)
                 output = tf.nn.bias_add(output, biases)
+
+            output = tf.Print(output, [output], "output before relu for " + name)
             if relu:
                 # ReLU non-linearity
-                output = tf.nn.relu(output, name=scope.name)
+                if alpha is None:
+                    output = tf.nn.relu(output)
+                else:
+                # Leaky ReLU non-linearity
+                    m_output = tf.nn.relu(-output) * alpha
+                    output = tf.nn.relu(output)
+                    output -= m_output
+
+            output = tf.Print(output, [output], "output after relu for " + name)
+                    
             return output
 
     @layer
@@ -201,6 +231,7 @@ class Network(object):
                s_w,
                name,
                relu=True,
+               alpha=None,
                padding=DEFAULT_PADDING,
                group=1,
                biased=True):
@@ -241,11 +272,22 @@ class Network(object):
                 biases = self.make_var('biases', [c_o])
                 output = tf.nn.bias_add(output, biases)
 
-            # ReLU non-linearity
             if relu:
-                output = tf.nn.relu(output, name=scope.name)
+                # ReLU non-linearity
+                if alpha is None:
+                    output = tf.nn.relu(output, name=scope.name)
+                else:
+                # Leaky ReLU non-linearity
+                    m_output = tf.nn.relu(-output)
+                    output = tf.nn.relu(output)
+                    output = tf.subtract(output, alpha * m_output, name=scope.name)
 
         return output
+
+    @layer
+    def subtract_mean(self, input, input_scale, means, name):
+        with tf.variable_scope(name) as scope:
+            return input_scale * input - means
 
     @layer
     def relu(self, input, name):
@@ -254,13 +296,11 @@ class Network(object):
     @layer
     def prelu(self, input, name):
         with tf.variable_scope(name):
-            # input = tf.Print(input, [input], "prelu input " + name)
             i = input.get_shape().as_list()
             i = i[1:]
             init = np.zeros(i, dtype=np.float32)
             init.fill(0.25)
             alphas = tf.get_variable('alpha', dtype=tf.float32, trainable=self.trainable, initializer=tf.constant(init))
-            # alphas = tf.Print(alphas, [alphas], "prelu alphas " + name)
 
             output = tf.nn.relu(input) + alphas * (input - tf.abs(input)) * 0.5
 
