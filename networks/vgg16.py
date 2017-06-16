@@ -42,7 +42,6 @@ class vgg16(Network):
 
     @staticmethod
     def preprocess_image(im, fixed_resolution=True):
-        # assumes RGB
         if fixed_resolution:
             im = np.copy(im).astype('uint8')
             # Resize so smallest dim = 256, preserving aspect ratio
@@ -55,6 +54,7 @@ class vgg16(Network):
             # Central crop to 224x224
             h, w, _ = im.shape
             im = im[h//2-112:h//2+112, w//2-112:w//2+112]
+
 
 
         # Convert to BGR

@@ -27,14 +27,14 @@ def classify(argv):
 
 
     im = load_image(args.image)
-    im = cls.preprocess_image(im, fixed_resolution=False)
+    im = cls.preprocess_image(im, fixed_resolution=True)
     im = np.expand_dims(im, axis=0)
     im_tensor = tf.placeholder(shape=im.shape,dtype=tf.float32, name="input")
 
     phase = tf.constant(True, tf.bool, name='phase')
     net = cls({'data': im_tensor}, phase, trainable=False, fixed_resolution=True)
     cls_tensor = net.get_output()
-    synset = [l.strip() for l in open('synset.txt').readlines()]
+    synset = [l.strip() for l in open('images/synset.txt').readlines()]
 
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         sess.run(tf.global_variables_initializer())

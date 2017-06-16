@@ -8,34 +8,67 @@ from util.util import *
 class Translation_Model:
     def __init__(self, conf, cls, cheat=False, trainable=True):
         self.relative_errors = conf.relative_errors
+        self.clip_loss_lambda = conf.clip_loss_lambda
         self.pose_dims = conf.pose_dims
-        self.rescale = tf.constant(self.rescale_value(self.pose_dims), dtype=tf.float32)
         self.highlight_rot_absolute_error = conf.highlight_rot_absolute_error
         self.highlight_rot_relative_error = conf.highlight_rot_relative_error
         self.highlight_pos_absolute_error = conf.highlight_pos_absolute_error
         self.highlight_pos_relative_error = conf.highlight_pos_relative_error
+
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
-            self.cheat_translation = tf.placeholder(tf.float32, shape=[None, self.pose_dims], name='cheat_translation')
+            self.cheat = tf.placeholder(tf.float32, shape=[None, self.pose_dims], name='cheat')
         else:
-            self.cheat_translation = None
+            self.cheat = None
 
-        self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat_translation, trainable=trainable)
+
+        self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat, trainable=trainable)
         self.pred_translation = self.network.get_output()
-
         self.translation = tf.placeholder(tf.float32, name='translation', shape=[None, self.pose_dims])
-        self.error = tf.multiply(self.pred_translation - self.translation, self.rescale)
 
-        if self.relative_errors:
-            self.error = tf.abs(tf.divide(self.error,  tf.multiply(self.translation, self.rescale)+0.001))
+        pos_dims = min(self.pose_dims, 3)
+        rot_dims = max(self.pose_dims - 3, 0)
 
-        # loss
-        if conf.clip_loss_lambda == None:
-            self.loss = tf.nn.l2_loss(self.error, name='l2_loss')
+        pos_truth = tf.slice(self.translation, [-1, pos_dims], [0, 0])
+        pos_pred = tf.slice(self.pred_translation, [-1, pos_dims], [0, 0])
+        pos_error = compute_
+        pos_error = self.compute_error(pos_pred, pos_truth)
+        pos_loss = self.compute_loss(pos_error, pos_truth, 'pos_loss')
+
+        variable_summaries(pos_error)
+        vairable_summaries(pos_loss)
+
+        if rot_dims != 0:
+            rot_truth = tf.slice(self.translation, [-1, 1], [0, 3])
+            rot_pred = tf.slice(self.pred_translation, [-1, 1], [0, 3])
+            rot_error = self.compute_error(rot_pred, rot_truth)
+            rot_loss = self.compute_loss(rot_error, rot_truth, 'rot_loss')
+
+            variable_summaries(rot_error)
+            vairable_summaries(rot_loss)
+    
+            self.error = tf.concat([pos_error, rot_error], 1)
+            self.loss = tf.concat([pos_loss, rot_loss * conf.rot_loss_factor)
         else:
-            self.loss = tf.reduce_sum(tf.maximum(0., self.error*self.error - conf.clip_loss_lambda*self.translation*self.translation))
+            self.error = pos_error
+            self.loss = pos_loss
+
         variable_summaries(self.loss)
+        variable_summaries(self.error)
         self.summary = tf.summary.merge_all()
+
+    def compute_loss(self, error, truth, name):
+        if self.clip_loss_lambda == None:
+            return tf.nn.l2_loss(error, name=name)
+        else:
+            return tf.reduce_sum(tf.maximum(0., error*error - conf.clip_loss_lambda*truth*truth), name=name)
+
+    def compute_error(self, pred, truth):
+        error = pred - truth
+        if self.relative_errors:
+            return tf.abs(tf.divide(pos_error,  pos_truth+0.001))
+        else:
+            return error
 
     def summary_tensor(self):
         return self.summary
@@ -62,17 +95,11 @@ class Translation_Model:
     def true_value(self, env):
         return np.reshape(env.translation(dims=self.pose_dims), [self.pose_dims])
 
-    def recalibrate(self, value, env):
-        for i in range(value.shape[0]):
-            value[i,:] =  env.recalibrate(value[i,:], dims=self.pose_dims)
-
-        return value
-
     def cheat_value(self, env):
         return self.true_value(env)
 
     def cheat_tensor(self):
-        return self.cheat_translation
+        return self.cheat
 
     def error_strings(self, true_translation, pred_translation):
         if true_translation.shape[0] != 1:
@@ -123,9 +150,7 @@ class Translation_Network():
         self.single_image = cls.single_image()
 
         with tf.variable_scope(scope):
-            #Input and visual encoding layers
-
-            input_shape = [None] + cls.preprocess_shape(conf.image_shape)
+            input_shape = [None] + conf.image_shape
             self.s_input = tf.placeholder(shape=input_shape,dtype=tf.float32, name="s_input")
             self.t_input = tf.placeholder(shape=input_shape,dtype=tf.float32, name="t_input")
 
@@ -154,13 +179,13 @@ class Translation_Network():
 
             hidden = slim.fully_connected(combined, 1024,
                     activation_fn=None,
-                    # activation_fn=tf.nn.elu,
+                    activation_fn=tf.nn.relu,
                     weights_initializer=normalized_columns_initializer(1.0),
                     biases_initializer=None, scope='hidden_vector')
 
             self.translation_pred = slim.fully_connected(hidden,self.pose_dims,
+                    # can't use relu as activation funtion here - we want negative values!
                     activation_fn=None,
-                    # activation_fn=tf.nn.elu,
                     weights_initializer=normalized_columns_initializer(1.0),
                     biases_initializer=None, scope='translation_pred')
 
