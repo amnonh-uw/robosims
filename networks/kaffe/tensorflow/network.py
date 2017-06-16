@@ -177,9 +177,7 @@ class Network(object):
         assert c_o % group == 0
         # Convolution for a given input and kernel
 
-        input = tf.Print(input, [input], "convolution input for " + name)
-
-        convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding=padding)
+        convolve = lambda i, k: tf.nn.conv2d(i, k, strides = [1, s_h, s_w, 1], padding=padding)
         with tf.variable_scope(name) as scope:
 
             if weights is None:
@@ -187,8 +185,6 @@ class Network(object):
             else:
                 weights = np.reshape(weights, [k_h, k_w, int(c_i / group), c_o])
                 kernel = tf.constant(weights, dtype=tf.float32)
-
-            kernel = tf.Print(kernel, [kernel], "kernel for " + name)
 
             if group == 1:
                 # This is the common-case. Convolve the input without any further complications.
@@ -203,10 +199,8 @@ class Network(object):
             # Add the biases
             if biased:
                 biases = self.make_var('biases', [c_o])
-                biases = tf.Print(biases, [biases], "biases for " +  name)
                 output = tf.nn.bias_add(output, biases)
 
-            output = tf.Print(output, [output], "output before relu for " + name)
             if relu:
                 # ReLU non-linearity
                 if alpha is None:
@@ -217,8 +211,6 @@ class Network(object):
                     output = tf.nn.relu(output)
                     output -= m_output
 
-            output = tf.Print(output, [output], "output after relu for " + name)
-                    
             return output
 
     @layer
