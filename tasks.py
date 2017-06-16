@@ -184,10 +184,12 @@ def train_a3c(context, port=0, start_unity=True):
     a3c_train(['--server-config=configs/cfg_bedroom04_drone.yaml', '--config=a3c/train.yaml', '--partial-load-model=model_translation/model-1500.cptk' ])
 
 @task
-def train(context, port=0, start_unity=True, config=None):
+def train(context, port=0, start_unity=True, resume = False, config=None):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml']
     args.append("--config=" + config)
+    if resume:
+        args.append("--load-model")
     model_train(args)
 
 @task
