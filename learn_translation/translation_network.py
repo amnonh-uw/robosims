@@ -29,32 +29,30 @@ class Translation_Model:
         pos_dims = min(self.pose_dims, 3)
         rot_dims = max(self.pose_dims - 3, 0)
 
-        pos_truth = tf.slice(self.translation, [-1, pos_dims], [0, 0])
-        pos_pred = tf.slice(self.pred_translation, [-1, pos_dims], [0, 0])
-        pos_error = compute_
+        pos_truth = tf.slice(self.translation, [0, 0], [-1, pos_dims])
+        pos_pred = tf.slice(self.pred_translation, [0, 0], [-1, pos_dims])
         pos_error = self.compute_error(pos_pred, pos_truth)
         pos_loss = self.compute_loss(pos_error, pos_truth, 'pos_loss')
 
-        variable_summaries(pos_error)
-        vairable_summaries(pos_loss)
+        variable_summaries(pos_loss)
 
         if rot_dims != 0:
-            rot_truth = tf.slice(self.translation, [-1, 1], [0, 3])
-            rot_pred = tf.slice(self.pred_translation, [-1, 1], [0, 3])
+            rot_truth = tf.slice(self.translation, [0, 3], [-1, rot_dims])
+            rot_pred = tf.slice(self.pred_translation, [0, 3], [-1, rot_dims])
             rot_error = self.compute_error(rot_pred, rot_truth)
             rot_loss = self.compute_loss(rot_error, rot_truth, 'rot_loss')
 
-            variable_summaries(rot_error)
-            vairable_summaries(rot_loss)
+            variable_summaries(rot_loss)
     
             self.error = tf.concat([pos_error, rot_error], 1)
-            self.loss = tf.concat([pos_loss, rot_loss * conf.rot_loss_factor)
+            self.loss = pos_loss + rot_loss * conf.rot_loss_factor
+            self.detailed_loss = tf.stack([pos_loss, rot_loss])
         else:
             self.error = pos_error
             self.loss = pos_loss
+            self.detailed_loss = pos_loss
 
         variable_summaries(self.loss)
-        variable_summaries(self.error)
         self.summary = tf.summary.merge_all()
 
     def compute_loss(self, error, truth, name):
@@ -87,6 +85,9 @@ class Translation_Model:
 
     def loss_tensor(self):
         return(self.loss)
+
+    def detailed_loss_tensor(self):
+        return(self.detailed_loss)
 
     def rescale_value(self, dims):
         rescale = [1, 1, 1, 0.5]
@@ -178,7 +179,6 @@ class Translation_Network():
                     combined = flatten(self.net.get_output())
 
             hidden = slim.fully_connected(combined, 1024,
-                    activation_fn=None,
                     activation_fn=tf.nn.relu,
                     weights_initializer=normalized_columns_initializer(1.0),
                     biases_initializer=None, scope='hidden_vector')
