@@ -257,7 +257,7 @@ def as_scalar(a):
 
 def process_frame(frame, cls):
     f = frame.astype(float)
-    f = cls.preprocess_image(f, keep_resolution=True)
+    f = cls.preprocess_image(f, fixed_resolution=False)
     return f
 
 def dataset_files(dataset):

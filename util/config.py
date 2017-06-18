@@ -175,6 +175,7 @@ class config(EasyDict):
         # loss
         self.clip_loss_lambda = None
         self.entropy_loss_weight = 500.
+        self.rot_loss_factor = 100
 
         self.learning_rate = 1e-4
 

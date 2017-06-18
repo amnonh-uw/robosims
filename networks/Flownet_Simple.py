@@ -27,9 +27,7 @@ class Flownet_Simple(Network):
              .concat(3, name='Concat1'))
 
         (self.feed('Concat1')
-             .conv(7, 7, 64, 2, 2, name='conv1', alpha=0.1))
-
-        return
+            .conv(7, 7, 64, 2, 2, name='conv1', alpha=0.1))
 
         (self.feed('conv1')
              .conv(5, 5, 128, 2, 2, name='conv2', alpha=0.1)

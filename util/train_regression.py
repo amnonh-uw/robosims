@@ -136,19 +136,20 @@ def train_regression(args, model_cls):
                     if conf.check_gradients:
                         check_grad(sess, grads_and_vars, feed_dict)
 
-                    # do we need predicted values here?
-                    _, loss, pred_values, errors, summary = sess.run([
+                    _, loss, detailed_loss, errors, summary = sess.run([
                             optimizer_update,
                             model.loss_tensor(),
-                            model.pred_tensor(),
+                            model.detailed_loss_tensor(),
                             model.error_tensor(),
                             model.summary_tensor()], feed_dict=feed_dict)
 
                     summary_writer.add_summary(summary, batch_count)
 
-                    err = np.sum(errors) / errors.size
-                    err_train = err
-                    loss = loss / conf.batch_size
+                    err = np.sum(errors, axis=0) / errors.shape[0]
+                    err_train = np.sum(err)
+                    loss = loss / errors.shape[0]
+                    detailed_loss = detailed_loss / errors.shape[0]
+
                     loss_train = loss 
                     if abs(err_train) > 2:
                         err_train = None
@@ -160,14 +161,13 @@ def train_regression(args, model_cls):
                     # Periodically save gifs of episodes, model parameters, and summary statistics.
                     if batch_count != 0:
                         if batch_count % conf.flush_plot_frequency == 0:
-                            print("{}: Loss={} err={}".format(episode_count, loss, err))
+                            print("{}: Loss={} detailed_loss={} err={}".format(episode_count, loss, detailed_loss, err))
                             summary_writer.flush()
                             plotter.redraw()
 
                         if batch_count % conf.model_save_frequency == 0:
                             saver.save(sess,conf.model_path+'/model-'+str(episode_count)+'.cptk')
                             print("Saved Model")
-
 
                         if conf.verify_dataset and batch_count % conf.verify_frequencey == 0:
                             err = verify(conf, sess, model, cls)
@@ -250,6 +250,7 @@ def test(conf, sess, model, cls, steps = 0):
         cap_texts = [("target:" + env.target_str())]
         cap_colors = ["white"]
         err_strings, err_colors = model.error_strings(true_value, pred_value)
+        print(err_strings)
         cap_texts.extend(err_strings)
         cap_colors.extend(err_colors)
         images_cap_texts = [cap_texts]

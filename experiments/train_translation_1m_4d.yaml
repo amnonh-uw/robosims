@@ -9,7 +9,7 @@ cheat: no
 base_class: vgg16
 load_base_weights: yes
 check_gradients: no
-epochs: 25
+epochs: 40
 iter: 40000
 batch_size: 32
 use_adam: yes
