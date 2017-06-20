@@ -49,6 +49,9 @@ class Class_Model:
     def true_tensor(self):
         return(self.label)
 
+    def detailed_loss_tensor(self):
+        return(self.loss)
+
     def loss_tensor(self):
         return(self.loss)
 
@@ -61,7 +64,7 @@ class Class_Model:
     def cheat_tensor(self):
         return self.cheat_class
 
-    def error_strings(self, true_class, pred_softmax):
+    def error_captions(self, true_class, pred_softmax):
         pred_class = np.argmax(pred_softmax)
 
         if pred_class != true_class:
@@ -78,12 +81,13 @@ class Class_Network:
     def __init__(self, conf, cls, scope, phase, cheat = None, trainable=False):
         self.pose_dims = conf.pose_dims
         self.scope = scope
+        input_shape = [None] + conf.image_shape
 
         with tf.variable_scope(scope):
             #Input and visual encoding layers
 
-            self.s_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="s_input")
-            self.t_input = tf.placeholder(shape=[None,conf.v_size,conf.h_size,conf.channels],dtype=tf.float32, name="t_input")
+            self.s_input = tf.placeholder(shape=input_shape, dtype=tf.float32, name="s_input")
+            self.t_input = tf.placeholder(shape=input_shape, dtype=tf.float32, name="t_input")
 
             with tf.variable_scope("siamese_network"):
                 self.source_net = cls({'data': self.s_input}, phase, trainable=trainable)

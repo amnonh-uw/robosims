@@ -10,6 +10,7 @@ class Translation_Model:
         self.relative_errors = conf.relative_errors
         self.clip_loss_lambda = conf.clip_loss_lambda
         self.pose_dims = conf.pose_dims
+        self.rotation_only = conf.rotation_only
         self.highlight_rot_absolute_error = conf.highlight_rot_absolute_error
         self.highlight_rot_relative_error = conf.highlight_rot_relative_error
         self.highlight_pos_absolute_error = conf.highlight_pos_absolute_error
@@ -21,20 +22,21 @@ class Translation_Model:
         else:
             self.cheat = None
 
-
         self.network = Translation_Network(conf, cls, "main", self.phase, self.cheat, trainable=trainable)
         self.pred_translation = self.network.get_output()
         self.translation = tf.placeholder(tf.float32, name='translation', shape=[None, self.pose_dims])
 
-        pos_dims = min(self.pose_dims, 3)
-        rot_dims = max(self.pose_dims - 3, 0)
+        if not conf.rotation_only:
+            pos_dims = min(self.pose_dims, 3)
+            pos_truth = tf.slice(self.translation, [0, 0], [-1, pos_dims])
+            pos_pred = tf.slice(self.pred_translation, [0, 0], [-1, pos_dims])
+            pos_error = self.compute_error(pos_pred, pos_truth)
+            pos_loss = self.compute_loss(pos_error, pos_truth, 'pos_loss')
 
-        pos_truth = tf.slice(self.translation, [0, 0], [-1, pos_dims])
-        pos_pred = tf.slice(self.pred_translation, [0, 0], [-1, pos_dims])
-        pos_error = self.compute_error(pos_pred, pos_truth)
-        pos_loss = self.compute_loss(pos_error, pos_truth, 'pos_loss')
-
-        variable_summaries(pos_loss)
+            variable_summaries(pos_loss)
+            rot_dims = max(self.pose_dims - 3, 0)
+        else:
+            rot_dims = 1
 
         if rot_dims != 0:
             rot_truth = tf.slice(self.translation, [0, 3], [-1, rot_dims])
@@ -44,9 +46,14 @@ class Translation_Model:
 
             variable_summaries(rot_loss)
     
-            self.error = tf.concat([pos_error, rot_error], 1)
-            self.loss = pos_loss + rot_loss * conf.rot_loss_factor
-            self.detailed_loss = tf.stack([pos_loss, rot_loss])
+            if conf.rotation_only:
+                self.error = rot_error
+                self.loss = rot_loss
+                self.detailed_loss = rot_loss
+            else:
+                self.error = tf.concat([pos_error, rot_error], 1)
+                self.loss = pos_loss + rot_loss * conf.rot_loss_factor
+                self.detailed_loss = tf.stack([pos_loss, rot_loss])
         else:
             self.error = pos_error
             self.loss = pos_loss
@@ -59,7 +66,7 @@ class Translation_Model:
         if self.clip_loss_lambda == None:
             return tf.nn.l2_loss(error, name=name)
         else:
-            return tf.reduce_sum(tf.maximum(0., error*error - conf.clip_loss_lambda*truth*truth), name=name)
+            return tf.reduce_sum(tf.maximum(0., error*error - self.clip_loss_lambda*truth*truth), name=name)
 
     def compute_error(self, pred, truth):
         error = pred - truth
@@ -102,15 +109,21 @@ class Translation_Model:
     def cheat_tensor(self):
         return self.cheat
 
-    def error_strings(self, true_translation, pred_translation):
-        if true_translation.shape[0] != 1:
-            raise ValueError("error_str excpects test_transaltion to be a vector")
+    def error_captions(self, true, pred):
+        if true.shape[0] != 1:
+            raise ValueError("error_str excpects true_transaltion to be a vector")
 
         strings = []
         colors = []
+        absolute_errors = []
+        texts = ["x {0:.2f} err:", "y {0:.2f} err:", "z {0:.2f} err:", "r {0:.2f} err:"]
 
-        texts = ["x {} err:", "y {} err:", "z {} err:", "r {} err:"]
-        for i in range(0,self.pose_dims):
+        if self.rotation_only:
+            begin = 3
+        else:
+            begin = 0
+
+        for i in range(begin,self.pose_dims):
             if i <= 3:
                 highlight_absolute_error = self.highlight_pos_absolute_error
                 highlight_relative_error = self.highlight_pos_relative_error
@@ -118,25 +131,26 @@ class Translation_Model:
                 highlight_absolute_error = self.highlight_rot_absolute_error
                 highlight_relative_error = self.highlight_rot_relative_error
 
-            relative_err = map_error(true_translation[0,i], pred_translation[0,i])
-            absolute_err = abs_error(true_translation[0,i], pred_translation[0,i])
+            relative_err = map_error(true[0,i], pred[0,i])
+            absolute_err = abs_error(true[0,i], pred[0,i])
+            absolute_errors.append(absolute_err)
 
             color = "white"
             if absolute_err > highlight_absolute_error:
                 if relative_err > highlight_relative_error:
                     color = "red"
 
-            s = texts[i].format(pred_translation[0,i])
+            s = texts[i].format(pred[0,i])
             s += str(round(relative_err, 2) *100) + "% "
             s += '('
             s += str(round(absolute_err, 2))
             s += "/"
-            s += str(round(true_translation[0,i], 2))
+            s += str(round(true[0,i], 2))
             s += ')'
             strings.append(s)
             colors.append(color)
 
-        return strings, colors
+        return strings, colors, absolute_errors
 
     def take_prediction_step(self, env, pred_value):
         env.take_prediction_step(pred_value)

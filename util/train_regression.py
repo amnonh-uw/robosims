@@ -224,7 +224,12 @@ def test(conf, sess, model, cls, steps = 0):
     test_iter = conf.test_iter
 
     print("testing... {} iterations".format(test_iter))
-    env = UnityGame(conf, dataset=conf.test_dataset, num_iter=test_iter, randomize=False)
+    if steps == 0:
+        test_dataset = conf.test_dataset
+    else:
+        test_dataset = None
+
+    env = UnityGame(conf, dataset=test_dataset, num_iter=test_iter, randomize=False)
 
     def empty_strings(n):
         l = []
@@ -249,21 +254,27 @@ def test(conf, sess, model, cls, steps = 0):
 
         cap_texts = [("target:" + env.target_str())]
         cap_colors = ["white"]
-        err_strings, err_colors = model.error_strings(true_value, pred_value)
-        print(err_strings)
-        cap_texts.extend(err_strings)
+        err_captions, err_colors, errs_absolute  = model.error_captions(true_value, pred_value)
+
+        cap_texts.extend(err_captions)
         cap_colors.extend(err_colors)
         images_cap_texts = [cap_texts]
         images_cap_colors = [cap_colors]
 
         cap_texts = ["source:" + env.source_str()]
-        cap_texts.extend(empty_strings(len(err_strings)))
+        cap_texts.extend(empty_strings(len(err_captions)))
         cap_colors = ["white"]
-        cap_colors.extend(empty_colors(len(err_strings)))
+        cap_colors.extend(empty_colors(len(err_captions)))
         images_cap_texts.append(cap_texts)
         images_cap_colors.append(cap_colors)
 
         if steps == 0:
+            print(" ".join(err_captions))
+            if episode_count == 0:
+                total_errs = errs_absolute
+            else:
+                total_errs = [x+y for x,y in zip(total_errs, errs_absolute)]
+
             make_jpg(conf, "test_set_", images, images_cap_texts,  images_cap_colors, episode_count)
         else:
             for step in range(steps):
@@ -274,15 +285,18 @@ def test(conf, sess, model, cls, steps = 0):
 
                 pred_value = predict(sess, t, image, model, cls, env)
                 true_value = np.expand_dims(model.true_value(env), axis=0)
-                err_strings, err_colors = model.error_strings(true_value, pred_value)
+                err_captions, err_colors, _ = model.error_captions(true_value, pred_value)
                 cap_texts = [("step {}:{}".format(step+1, env.source_str()))]
-                cap_texts.extend(err_strings)
+                cap_texts.extend(err_captions)
                 cap_colors = ["white"]
                 cap_colors.extend(err_colors)
                 images_cap_texts.append(cap_texts)
                 images_cap_colors.append(cap_colors)
 
             make_jpg(conf, "test_set_steps_", images, images_cap_texts, images_cap_colors, episode_count)
+
+    if steps == 0:
+        print("avg absolute errors: " + " ".join(["{0:.2f}".format(x / episode_count) for x in total_errs]))
 
     env.close()
 

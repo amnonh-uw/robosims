@@ -61,9 +61,7 @@ def parse_args(argv):
         args.conf.epochs = 1
 
         args.conf.test_only = True
-        if args.conf.iter == 0:
-            args.conf.test_iter = 100
-        else:
+        if args.conf.iter != 0:
             args.conf.test_iter = args.iter
     else:
         if args.conf.iter == 0:
@@ -111,6 +109,7 @@ class config(EasyDict):
         self.verify_iter = 0
         self.verify_frequencey = 500000
         self.pose_dims = 3
+        self.rotation_only = False
         self.highlight_pos_absolute_error = 0.1
         self.highlight_pos_relative_error = 0.25
         self.highlight_rot_absolute_error = 2
