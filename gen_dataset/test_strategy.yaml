@@ -6,4 +6,9 @@ probe_distance: 1.
 grid_distance: 0.01
 grid_rotation: 0.1
 iter: 1000
-dataset: datasets/1m_20deg_small
+epochs: 1
+dataset: datasets/test_strategy
+close_enough_prob: 0.33
+too_far_prob: 0.33
+close_enough_distance: 0.05
+close_enough_rotation: 1.

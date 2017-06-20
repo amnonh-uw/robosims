@@ -1,9 +1,10 @@
 # distance between source and destination
-max_distance_delta: 1.
-max_rotation_delta: 0.
+max_distance_delta: 2.
+max_rotation_delta: 20.
 probe_distance: 1.
-iter: 10000
 # grid
 grid_distance: 0.01
 grid_rotation: 0.1
-dataset: datasets/small_1m
+iter: 1000
+epcohs: 1
+dataset: datasets/test_2m_20deg

@@ -1,12 +1,11 @@
 learning_rate: 1.e-5
 postfix: strategy
 model: class
-dataset: datasets/strategy
+test_dataset: datasets/test_strategy
 close_enough_prob: 0.33
 too_far_prob: 0.33
 max_distance_delta: 1.
 max_rotation_delta: 0
-iter: 40000
 batch_size: 32
 epochs: 50
 pose_dims: 0
@@ -17,3 +16,5 @@ close_enough_distance: 0.05
 close_enough_rotation: 1.
 max_rotation_delta: 20.
 test_steps: 0
+iter: 0
+test_iter: 100
