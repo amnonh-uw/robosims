@@ -1,0 +1,12 @@
+#! /bin/bash
+if [ -z $CUDA_VISIBLE_DEVICES ];
+    then echo must set CUDA_VISIBLE_DEVICES
+    exit
+fi
+
+if [ $# -ne 1 ]; 
+    then echo "test experiment.yaml"
+    exit
+fi
+out_dir=`echo $1 | sed "s/test_/frames_/" | sed "s;.*/;;" | sed "s;\.yaml$;;"`
+invoke test --config=$1 |& tee $out_dir/test.out

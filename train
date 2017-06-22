@@ -1,0 +1,12 @@
+#! /bin/bash
+if [ -z $CUDA_VISIBLE_DEVICES ];
+    then echo must set CUDA_VISIBLE_DEVICES
+    exit
+fi
+
+if [ $# -ne 1 ]; 
+    then echo "train experiment.yaml"
+    exit
+fi
+out=`echo $1 | sed "s;.*/;;" | sed "s;\.yaml$;.out;"`
+nohup invoke train --config=$1 >& $out 
