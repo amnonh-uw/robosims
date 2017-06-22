@@ -47,10 +47,12 @@ def format_sse(**params):
 
 class Event(object):
 
-    def __init__(self, metadata, frame_id, frame):
+    def __init__(self, metadata, frame_id, frame, frame_depth = None, frame_flow = None):
         self.metadata = metadata
         self.frame_id = frame_id
         self.frame = frame
+        self.frame_depth = frame_depth
+        self.frame_flow = frame_flow
 
 
 class Controller(object):
@@ -263,16 +265,24 @@ class Server(object):
             if 'image' in request.files:
                 image = request.files['image']
                 image_data = image.read()
-                filename = image.filename
                 self.image_queue.append(image_data)
                 image = np.asarray(Image.open(io.BytesIO(image_data)))  # decode image from string encoding
-            else:
-                image = self.capture_screenshot(metadata['screenWidth'], metadata['screenHeight'])
-                filename = "image-%s.png" % self.frame_counter
-                # skipping because png encoding is too slow
-                # self.image_queue.append(image_data.read())
 
-            event = Event(metadata, self.frame_counter, image)
+            if 'image_depth' in request.files:
+                image_depth = request.files['image_depth']
+                image_depth_data = image_depth.read()
+                image_depth = np.asarray(Image.open(io.BytesIO(image_depth_data)))  # decode image from string encoding
+            else:
+                image_depth = None
+
+            if 'image_flow' in request.files:
+                image_flow = request.files['image_flow']
+                image_flow = image_flow.read()
+                image_flow = np.asarray(Image.open(io.BytesIO(image_flow)))  # decode image from string encoding
+            else:
+                image_flow = None
+
+            event = Event(metadata, self.frame_counter, image, image_depth, image_flow)
 
             if self.frame_counter != 0:
                 # The first event is the result of initializing
@@ -313,30 +323,3 @@ class Server(object):
 
     def start(self):
         self.wsgi_server.serve_forever()
-
-    def capture_screenshot(self, width, height):
-        windows = self.window_children()
-        window_id = windows[self.xwindow_id]
-
-        width = int(width)
-        height = int(height)
-
-        if not self.image_buffer:
-            self.image_buffer = mss.linux.create_string_buffer(height * width * 3)
-
-        zpixmap = 2
-        allplanes = self.sct.xlib.XAllPlanes()
-
-        # Fix for XGetImage:
-        #     expected LP_Display instance instead of LP_XWindowAttributes
-        window = mss.linux.cast(window_id, mss.linux.POINTER(mss.linux.Display))
-        ximage = self.sct.xlib.XGetImage(self.sct.display, window, 0, 0, width, height, allplanes, zpixmap)
-        ret = self.sct.mss.GetXImagePixels(ximage, self.image_buffer)
-        self.sct.xlib.XDestroyImage(ximage)
-        #print("elapsed 2 %s" % (time.time() - s))
-
-        if not ret:
-            err = 'libmss.GetXImagePixels() failed (retcode={0}).'
-            raise mss.linux.ScreenshotError(err.format(ret))
-
-        return np.fromstring(self.image_buffer, dtype=np.uint8).reshape(height, width, 3)

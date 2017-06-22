@@ -4,6 +4,7 @@ import numpy as np
 import robosims.server
 from robosims.actions import *
 import pickle
+from PIL import Image
 
 version = 1
 
