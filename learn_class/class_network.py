@@ -22,11 +22,7 @@ class Class_Model:
 
         # cross entropy loss and classifcation error
         self.label = tf.placeholder(tf.int32, name='label', shape=[None])
-        # a = tf.Print(self.pred_class, (self.pred_class,), summarize = 100, message="prediction")
-        # b = tf.Print(self.label, (self.label,), summarize = 100, message="label")
         self.error = tf.not_equal(self.pred_class, self.label)
-        # self.error = tf.not_equal(a, b)
-        # self.error = tf.Print(self.error, (self.error,), summarize = 100, message="error")
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(tf.reshape(self.label,[-1]),
                 logits=self.pred_logits, scope='loss')
