@@ -16,6 +16,10 @@ class Translation_Model:
         self.highlight_pos_absolute_error = conf.highlight_pos_absolute_error
         self.highlight_pos_relative_error = conf.highlight_pos_relative_error
 
+        if cls.tf_trainable:
+            self.init_tf(conf, cls, cheat, trainable)
+
+    def init_tf(self, conf, cls, cheat, trainable):
         self.phase = tf.placeholder(tf.bool, name='phase')
         if cheat:
             self.cheat = tf.placeholder(tf.float32, shape=[None, self.pose_dims], name='cheat')
