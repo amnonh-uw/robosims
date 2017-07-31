@@ -9,43 +9,44 @@ import traceback
 from robosims.unity import UnityGame
 from util.util import *
 from util.laplotter import *
+from util.test_regression import *
 from PIL import Image, ImageDraw, ImageFont
 
 def train_regression(args, model_cls):
     conf = args.conf
     mod = importlib.import_module(conf.base_class)
     cls = getattr(mod, conf.base_class)
-    if conf.load_base_weights:
-        cls_data = sys_path_find(conf.base_class + ".npy")
-        if cls_data == None:
-            print("can't find data file for class {}".format(conf.base_class))
-            exit()
-
-    cheat = conf.cheat
-    model = model_cls(conf, cls, cheat=cheat, trainable=conf.trainable)
+    model = model_cls(conf, cls, cheat=conf.cheat, trainable=conf.trainable)
     make_dirs(model.name(), args)
 
-    # Create an optimizer.
-    if conf.use_adam:
-        optimizer = tf.train.AdamOptimizer(learning_rate=conf.learning_rate)
-    else:
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=conf.learning_rate)
+    train(args, model, cls)
+
+def train(args, model, cls):
+    conf = args.conf
+    cheat = conf.cheat
+    env = None
+
+    if cls.tf_trainable:
+        # Create an optimizer.
+        if conf.use_adam:
+            optimizer = tf.train.AdamOptimizer(learning_rate=conf.learning_rate)
+        else:
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=conf.learning_rate)
         
-    #update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        # Ensures that we execute the update_ops before calculating
+        # gradients and aplying them
+        #with tf.control_dependencies(update_ops):
+            # Compute the gradients
+        grads_and_vars = optimizer.compute_gradients(model.loss_tensor(), colocate_gradients_with_ops=conf.colocate_gradients_with_ops)
 
-    # Ensures that we execute the update_ops before calculating
-    # gradients and aplying them
-    #with tf.control_dependencies(update_ops):
-        # Compute the gradients
-    grads_and_vars = optimizer.compute_gradients(model.loss_tensor(), colocate_gradients_with_ops=conf.colocate_gradients_with_ops)
+            # Ask the optimizer to apply the gradients.
+        optimizer_update = optimizer.apply_gradients(grads_and_vars)
 
-        # Ask the optimizer to apply the gradients.
-    optimizer_update = optimizer.apply_gradients(grads_and_vars)
+        saver = tf.train.Saver(max_to_keep=5)
 
-    saver = tf.train.Saver(max_to_keep=5)
+        sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=conf.allow_soft_placement,
+                                          log_device_placement=conf.log_device_placement))
 
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=conf.allow_soft_placement,
-                                          log_device_placement=conf.log_device_placement)) as sess:
         # Instantiate a SummaryWriter to output summaries and the Graph.
         summary_writer = tf.summary.FileWriter(conf.log_path, sess.graph)
         summary_writer.flush()
@@ -61,6 +62,11 @@ def train_regression(args, model_cls):
         else:
             sess.run(tf.global_variables_initializer())
             if conf.load_base_weights:
+                cls_data = sys_path_find(conf.base_class + ".npy")
+                if cls_data == None:
+                    print("can't find data file for class {}".format(conf.base_class))
+                    exit()
+
                 print("loading network weights")
                 model.network.load(cls_data, sess, ignore_missing=True)
                 print("network load complete")
@@ -81,7 +87,6 @@ def train_regression(args, model_cls):
 
                 print("doing {}*{} training iterations".format(train_iter, epochs))
         
-            env = None
             episodes_in_batch = 0
             for epoch in range(0, epochs):
                 print("epoch {}".format(epoch))
@@ -173,17 +178,12 @@ def train_regression(args, model_cls):
                             err = verify(conf, sess, model, cls)
                             print("error on verification set: {}".format(err))
 
-                if env != None and epoch != epochs - 1:
+                if env != None:
                     env.close()
                     env = None
 
             if epochs != 0:
                 plotter.redraw()
-
-            test(conf, sess, model, cls, steps=0)
-            if conf.test_steps != 0:
-                test(conf, sess, model, cls, steps=conf.test_steps)
-                
 
         except KeyboardInterrupt:
             print("W: interrupt received, stopping…")
@@ -196,17 +196,27 @@ def train_regression(args, model_cls):
             if env != None:
                 env.close()
 
-def predict(sess, t, s, model, cls, env):
-    t_input = np.expand_dims(process_frame(t, cls), axis=0)
-    s_input = np.expand_dims(process_frame(s, cls), axis=0)
+    try:
+        if cls.tf_testable:
+            predict = lambda t, s, model: regression_predict(sess, cls, t, s, model)
+        else:
+            instance = cls()
+            predict = lambda t, s, model: instance.predictor(t, s, model)
 
-    feed_dict = {
-                model.phase_tensor(): 1,
-                model.network.s_input:s_input,
-                model.network.t_input:t_input }
+        test(conf, model, predict, steps=0)
+        if conf.test_steps != 0:
+            test(conf, model, predict, steps=conf.test_steps)
 
-    pred_value = sess.run(model.pred_tensor(), feed_dict=feed_dict)
-    return pred_value
+    except KeyboardInterrupt:
+        print("W: interrupt received, stopping…")
+    except EOFError:
+        print("end of pickled file reached")
+    except Exception as e:
+        print('Exception {}'.format(e))
+        traceback.print_exc()
+    finally:
+        if env != None:
+            env.close()
 
 def verify_err(sess, t, s, model, cls):
     t_input = np.expand_dims(process_frame(t, cls), axis=0)
@@ -219,86 +229,6 @@ def verify_err(sess, t, s, model, cls):
 
     errors = sess.run(model.error_tensor(), feed_dict=feed_dict)
     return np.sum(errors) / errors.size
-
-def test(conf, sess, model, cls, steps = 0):
-    test_iter = conf.test_iter
-
-    print("testing... {} iterations".format(test_iter))
-    if steps == 0:
-        test_dataset = conf.test_dataset
-    else:
-        test_dataset = None
-
-    env = UnityGame(conf, dataset=test_dataset, num_iter=test_iter, randomize=False)
-
-    def empty_strings(n):
-        l = []
-        for k in range(n):
-            l.append("")
-        return l
-
-    def empty_colors(n):
-        l = []
-        for k in range(n):
-            l.append("white")
-        return l
-
-    for episode_count in range(0, test_iter):
-        env.new_episode()
-        t = env.get_state().target_buffer()
-        s = env.get_state().source_buffer()
-        pred_value = predict(sess, t, s,  model, cls, env)
-        true_value = np.expand_dims(model.true_value(env), axis=0)
-
-        images = [t, s]
-
-        cap_texts = [("target:" + env.target_str())]
-        cap_colors = ["white"]
-        err_captions, err_colors, errs_absolute  = model.error_captions(true_value, pred_value)
-
-        cap_texts.extend(err_captions)
-        cap_colors.extend(err_colors)
-        images_cap_texts = [cap_texts]
-        images_cap_colors = [cap_colors]
-
-        cap_texts = ["source:" + env.source_str()]
-        cap_texts.extend(empty_strings(len(err_captions)))
-        cap_colors = ["white"]
-        cap_colors.extend(empty_colors(len(err_captions)))
-        images_cap_texts.append(cap_texts)
-        images_cap_colors.append(cap_colors)
-
-        if steps == 0:
-            print(" ".join(err_captions))
-            if episode_count == 0:
-                total_errs = errs_absolute
-            else:
-                total_errs = [x+y for x,y in zip(total_errs, errs_absolute)]
-
-            make_jpg(conf, "test_set_", images, images_cap_texts,  images_cap_colors, episode_count)
-        else:
-            for step in range(steps):
-                pred_value = np.squeeze(pred_value)
-                model.take_prediction_step(env, pred_value)
-                image = env.get_state().source_buffer()
-                images.append(image)
-
-                pred_value = predict(sess, t, image, model, cls, env)
-                true_value = np.expand_dims(model.true_value(env), axis=0)
-                err_captions, err_colors, _ = model.error_captions(true_value, pred_value)
-                cap_texts = [("step {}:{}".format(step+1, env.source_str()))]
-                cap_texts.extend(err_captions)
-                cap_colors = ["white"]
-                cap_colors.extend(err_colors)
-                images_cap_texts.append(cap_texts)
-                images_cap_colors.append(cap_colors)
-
-            make_jpg(conf, "test_set_steps_", images, images_cap_texts, images_cap_colors, episode_count)
-
-    if steps == 0:
-        print("avg absolute errors: " + " ".join(["{0:.2f}".format(x / episode_count) for x in total_errs]))
-
-    env.close()
 
 def verify(conf, sess, model, cls):
     env = UnityGame(args, num_iter = verify_iter, dataset = conf.verify_dataset, randomize=False)
