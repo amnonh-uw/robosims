@@ -3,6 +3,8 @@ from kaffe.tensorflow import Network
 import numpy as np
 
 class vgg16(Network):
+    tf_trainable = True
+    tf_testable = True
     def setup(self):
         (self.feed('data')
              .conv(3, 3, 64, 1, 1, name='conv1_1')
