@@ -6,7 +6,7 @@ from robosims.actions import *
 import pickle
 from PIL import Image
 
-version = 1
+version = 2
 
 class DatasetInfo:
     def __init__(self, conf):
@@ -229,12 +229,24 @@ class UnityGame:
         action = ActionBuilder.addRotation(rx, ry, rz)
         return self.step(action)
 
+    def take_add_action(self, x, y, z, rx, ry, rz):
+        action = ActionBuilder.Add(x, y, z, rx, ry, rz)
+        return self.step(action)
+
+    def take_add_rotation_action(self, rx, ry, rz):
+        action = ActionBuilder.addRotation(rx, ry, rz)
+        return self.step(action)
+
     def take_set_position_action(self, x, y, z):
         action = ActionBuilder.setPosition(x, y, z)
         return self.step(action)
 
     def take_set_rotation_action(self, rx, ry, rz):
         action = ActionBuilder.setRotation(rx, ry, rz)
+        return self.step(action)
+
+    def take_set_action(self, x, y, z, rx, ry, rz):
+        action = ActionBuilder.Set(x, y, z, rx, ry, rz)
         return self.step(action)
 
     def take_probe_action(self, x, y, z, d):
@@ -357,14 +369,8 @@ class UnityGame:
         self.max_z = 13.4
 
     def valid_pose(self, x, y, z, r):
-        #move to target
-        event = self.take_set_position_action(x, y,z)
-        if self.collision:
-            return None
-
-
-        # rotate to target
-        event = self.take_set_rotation_action(0, r, 0)
+        #move and rotate to target
+        move_event = self.take_set_action(x,y,z, 0, r, 0)
         if self.collision:
             return None
 
@@ -373,7 +379,7 @@ class UnityGame:
             if self.collision:
                 return None
 
-        return event
+        return move_event
 
     def gen_new_episode(self, close_enough = False, too_far = False):
         self.min_r = 0
@@ -397,6 +403,8 @@ class UnityGame:
                 continue
 
             self.s_frame = self.s.frame
+            self.s_frame_depth = self.s.frame_depth
+            self.t_to_s_frame_flow = self.s.frame_flow
             break
 
         # print("new episode {}{}-{}{}".format(self.s_pos, self.s_rot, self.t_pos, self.t_rot))
