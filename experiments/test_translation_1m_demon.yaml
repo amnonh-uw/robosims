@@ -1,0 +1,16 @@
+model: translation
+postfix: translation_1m
+test_dataset: datasets/test_1m
+max_distance_delta: 1.
+max_rotation_delta: 0
+pose_dims: 3
+cheat: no
+base_class: demon
+check_gradients: no
+epochs: 1
+iter: 0
+test_iter: 100
+test_steps: 0
+batch_size: 32
+relative_errors: no
+colocate_gradients_with_ops: no
