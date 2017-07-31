@@ -48,8 +48,17 @@ class ActionBuilder(object):
         return action
 
     @staticmethod
-    def addPositionRotation(x, y, z, rx, ry, rz):
+    def Add(x, y, z, rx, ry, rz):
         action = dict(actionName='addPositionRotation')
+        p = (x, y, z)
+        action['actionVector'] = p
+        r = (rx, ry, rz)
+        action['actionVector2'] = r
+        return action
+
+    @staticmethod
+    def Set(x, y, z, rx, ry, rz):
+        action = dict(actionName='setPositionRotation')
         p = (x, y, z)
         action['actionVector'] = p
         r = (rx, ry, rz)
