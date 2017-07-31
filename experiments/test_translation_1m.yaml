@@ -1,4 +1,3 @@
-learning_rate: 1.e-5
 model: translation
 postfix: translation_1m
 test_dataset: datasets/test_1m
@@ -14,8 +13,5 @@ iter: 0
 test_iter: 100
 test_steps: 0
 batch_size: 32
-use_adam: yes
 relative_errors: no
-flush_plot_frequency: 20
-model_save_frequency: 5000
 colocate_gradients_with_ops: no
