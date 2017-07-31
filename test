@@ -1,12 +1,31 @@
 #! /bin/bash
+verbose=0
+while :; do
+    case $1 in
+        -v|--verbose)
+                verbose=1
+                ;;
+        *)               # Default case: No more options, so break out of the loop.
+                break
+    esac
+
+    shift
+done
+
 if [ -z $CUDA_VISIBLE_DEVICES ];
     then echo must set CUDA_VISIBLE_DEVICES
     exit
 fi
 
 if [ $# -ne 1 ]; 
-    then echo "test experiment.yaml"
+    then echo "train experiment.yaml"
     exit
 fi
+
+out=`echo $1 | sed "s;.*/;;" | sed "s;\.yaml$;.out;"`
 out_dir=`echo $1 | sed "s/test_/frames_/" | sed "s;.*/;;" | sed "s;\.yaml$;;"`
-invoke test --config=$1 |& tee $out_dir/test.out
+if [ $verbose == 1 ]; then
+    nohup invoke test --config=$1 |& tee $out_dir/test.out
+else
+    nohup invoke test --config=$1 >& $out_dir/test.out
+fi
