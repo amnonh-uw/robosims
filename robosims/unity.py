@@ -4,6 +4,7 @@ import numpy as np
 import robosims.server
 from robosims.actions import *
 import pickle
+from threading import Lock
 from PIL import Image
 
 version = 2
@@ -50,6 +51,7 @@ class UnityGame:
         else:
             self.controller = None
             data_file, idx_file  = self.dataset_files(dataset)
+
             with open(idx_file, "rb") as idx:
                 self.index = pickle.load(idx)
                 if num_iter != 0:
@@ -70,6 +72,8 @@ class UnityGame:
             if self.dataset == None:
                 print("can't open {}".format(data_file))
                 raise ValueError("can't open " + data_file)
+
+            self.dataset_lock = Lock()
 
     @staticmethod
     def remove_private_members(tmp_dict):
@@ -157,14 +161,19 @@ class UnityGame:
 
         return b
 
-    def new_episode(self):
+    def new_episode(self, episode_num=None):
         if self.controller == None:
             if self.episode_counter == self.index.size:
                 raise ValueError("number of episodes in data set exceeded")
 
-            self.dataset.seek(self.index[self.episode_counter])
-            self.episode_counter += 1
-            tmp_dict = pickle.load(self.dataset).__dict__
+            if episode_num == None:
+                episode_num = self.episode_counter
+                self.episode_counter += 1
+
+            with self.dataset_lock:
+                self.dataset.seek(self.index[episode_num])
+                tmp_dict = pickle.load(self.dataset).__dict__
+
             self.remove_private_members(tmp_dict)
             self.__dict__.update(tmp_dict) 
         else:

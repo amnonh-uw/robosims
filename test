@@ -17,15 +17,18 @@ if [ -z $CUDA_VISIBLE_DEVICES ];
     exit
 fi
 
-if [ $# -ne 1 ]; 
-    then echo "train experiment.yaml"
+if [ $# -lt 1 ]; 
+    then echo "train experiment.yaml ..."
     exit
 fi
 
-out=`echo $1 | sed "s;.*/;;" | sed "s;\.yaml$;.out;"`
-out_dir=`echo $1 | sed "s/test_/frames_/" | sed "s;.*/;;" | sed "s;\.yaml$;;"`
+config=$1
+shift
+out=`echo $config | sed "s;.*/;;" | sed "s;\.yaml$;.out;"`
+out_dir=`echo $config | sed "s/test_/frames_/" | sed "s;.*/;;" | sed "s;\.yaml$;;"`
+echo invoke test --config=$config $@|& tee $out_dir/test.out
 if [ $verbose == 1 ]; then
-    nohup invoke test --config=$1 |& tee $out_dir/test.out
+    nohup invoke test --config=$config $@|& tee $out_dir/test.out
 else
-    nohup invoke test --config=$1 >& $out_dir/test.out
+    nohup invoke test --config=$config $ @>& $out_dir/test.out
 fi

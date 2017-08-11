@@ -87,7 +87,9 @@ def make_image(images, cap_texts, cap_colors):
         line_height = text_height_margin
 
         for j in range(len(caps)):
-            caption_draw.text((width_start,line_height), caps[j], font=font, fill=colors[j])
+            text = caps[j]
+            if text != '':
+                caption_draw.text((width_start,line_height), caps[j], font=font, fill=colors[j])
             line_height += text_height_margin + text_height
 
         width_start += seperator_width + images[i].size[0]
@@ -275,4 +277,3 @@ def get_font(fontsize):
         font = ImageFont.load_default()
 
     return font
-

@@ -34,7 +34,6 @@ def parse_args(argv):
             args.conf.postfix = os.path.splitext(os.path.basename(args.config))[0]
 
     args.conf.server_config = args.server_config
-    args.conf.gen_dataset = False
 
     if args.base_class != None:
         args.conf.base_class = args.base_class
@@ -116,6 +115,7 @@ class config(EasyDict):
         self.highlight_rot_relative_error = 0.25
 
 
+        self.gen_dataset = False
         self.model = None
         self.trainable = True
 
@@ -126,6 +126,7 @@ class config(EasyDict):
 
         # image shape
         self.image_shape = [300, 400, 3]
+        self.vert_fov = 60
 
         self.sensors = 1
         self.gamma = 0.99
@@ -168,7 +169,7 @@ class config(EasyDict):
 
         # gif
         self.gif_fps = 20
-        self.base_class = 'vgg16'
+        self.base_class = None
         self.load_base_weights = False
 
         # loss

@@ -120,7 +120,7 @@ class Translation_Model:
         strings = []
         colors = []
         absolute_errors = []
-        texts = ["x {0:.2f} err:", "y {0:.2f} err:", "z {0:.2f} err:", "r {0:.2f} err:"]
+        texts = ["pred x {0:.2f} err:", "pred y {0:.2f} err:", "pred z {0:.2f} err:", "pred r {0:.2f} err:"]
 
         if self.rotation_only:
             begin = 3
@@ -144,6 +144,7 @@ class Translation_Model:
                 if relative_err > highlight_relative_error:
                     color = "red"
 
+            print(pred[0, i])
             s = texts[i].format(pred[0,i])
             s += str(round(relative_err, 2) *100) + "% "
             s += '('
