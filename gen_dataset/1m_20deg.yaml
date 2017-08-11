@@ -6,3 +6,4 @@ probe_distance: 1.
 grid_distance: 0.01
 grid_rotation: 0.1
 dataset: datasets/1m_20deg
+iter: 40000
