@@ -200,7 +200,7 @@ def train(args, model, cls):
         if cls.tf_testable:
             predict = lambda t, s, model: regression_predict(sess, cls, t, s, model)
         else:
-            instance = cls()
+            instance = cls(conf)
             predict = lambda t, s, model: instance.predictor(t, s, model)
 
         test(conf, model, predict, steps=0)

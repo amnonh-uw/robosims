@@ -144,7 +144,6 @@ class Translation_Model:
                 if relative_err > highlight_relative_error:
                     color = "red"
 
-            print(pred[0, i])
             s = texts[i].format(pred[0,i])
             s += str(round(relative_err, 2) *100) + "% "
             s += '('

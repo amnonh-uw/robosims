@@ -193,11 +193,10 @@ def train(context, port=0, start_unity=True, resume = False, config=None):
     model_train(args)
 
 @task
-def test(context, port=0, start_unity=True, config=None, base_class='vgg16'):
+def test(context, port=0, start_unity=True, config=None):
     sys.path.append("./networks")
     args = ['--server-config=configs/cfg_bedroom04_drone.yaml', '--load-model', '--test-only']
     args.append("--config=" + config)
-    args.append("--base-class=" + base_class)
     model_train(args)
 
 @task

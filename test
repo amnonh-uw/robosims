@@ -26,6 +26,9 @@ config=$1
 shift
 out=`echo $config | sed "s;.*/;;" | sed "s;\.yaml$;.out;"`
 out_dir=`echo $config | sed "s/test_/frames_/" | sed "s;.*/;;" | sed "s;\.yaml$;;"`
+if [ ! -d "$out_dir" ]; then
+  mkdir "$out_dir"
+fi
 echo invoke test --config=$config $@|& tee $out_dir/test.out
 if [ $verbose == 1 ]; then
     nohup invoke test --config=$config $@|& tee $out_dir/test.out

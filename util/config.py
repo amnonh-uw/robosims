@@ -83,6 +83,18 @@ def parse_args(argv):
 
     return args
 
+class Loader(yaml.Loader):
+    def __init__(self, stream):
+        self._root = os.path.split(stream.name)[0]
+        super(Loader, self).__init__(stream)
+
+    def include(self, node):
+        filename = os.path.join(self._root, self.construct_scalar(node))
+        with open(filename, 'r') as f:
+            return yaml.load(f, Loader)
+
+Loader.add_constructor('!include', Loader.include)
+
 class config(EasyDict):
     def __init__(self):
         self.postfix = None
@@ -171,6 +183,7 @@ class config(EasyDict):
         self.gif_fps = 20
         self.base_class = None
         self.load_base_weights = False
+        self.checkpoint_dir = None
 
         # loss
         self.clip_loss_lambda = None
@@ -181,7 +194,7 @@ class config(EasyDict):
 
     def load(self, file_name):
         with open(file_name, 'r') as stream:
-            y = yaml.safe_load(stream)
+            y = yaml.load(stream, Loader)
             for k, v in y.items():
                 if isinstance(self[k], float) and isinstance(v, int):
                     v = float(v)
