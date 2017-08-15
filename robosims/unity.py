@@ -202,15 +202,12 @@ class UnityGame:
 
     def step(self, action):
         event = self.controller.step(action)
-        controlCommand = event.metadata['controlCommand']
         self.collision = event.metadata['collided']
         if self.collision:
             self.collidedObjects = event.metadata['collidedObjects']
         agent = event.metadata['agent']
         self.s_position = agent['position']
         self.s_rotation = agent['rotation']
-        # print("position {}".format(self.s_position))
-        # print("rotation {}".format(self.s_rotation))
         self.extract_source_pose()
         return event
 
@@ -388,6 +385,15 @@ class UnityGame:
             if self.collision:
                 return None
 
+        agent = move_event.metadata['agent']
+        pos = agent['position']
+        rot = agent['rotation']
+
+        assert abs(pos['x'] - x) < 0.01
+        assert abs(pos['y'] - y) < 0.01
+        assert abs(pos['z'] - z) < 0.01
+        assert abs(rot['y'] - r) < 0.01
+
         return move_event
 
     def gen_new_episode(self, close_enough = False, too_far = False):
@@ -415,6 +421,13 @@ class UnityGame:
             self.s_frame_depth = self.s.frame_depth
             self.t_to_s_frame_flow = self.s.frame_flow
             break
+
+        if not too_far:
+            trans = self.translation(dims=4)
+            assert abs(trans[0]) - self.conf.max_distance_delta < 0.01, "x %f > max %f" % (trans[0], self.conf.max_distance_delta)
+            assert abs(trans[1]) - self.conf.max_distance_delta < 0.01, "y %f > max %f" % (trans[1], self.conf.max_distance_delta)
+            assert abs(trans[2]) - self.conf.max_distance_delta < 0.01, "z %f > max %f" % (trans[2], self.conf.max_distance_delta)
+            assert abs(trans[3]) -  self.conf.max_rotation_delta < 0.01, "r %f > max %f" % (trans[3], self.conf.max_rotation_delta)
 
         # print("new episode {}{}-{}{}".format(self.s_pos, self.s_rot, self.t_pos, self.t_rot))
 

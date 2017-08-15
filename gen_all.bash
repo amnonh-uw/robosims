@@ -10,7 +10,7 @@ if [ "$#" -eq 2 ]; then
     touch $x/$dataset.idx
     ln -s $x/$dataset.data datasets/$dataset.data
     ln -s $x/$dataset.idx datasets/$dataset.idx
-    invoke gen_train_dataset --config=$i &> datasets/$dataset.out
+    invoke gen_train_dataset --config=$i &> $x/$dataset.out
     exit
 fi
 
