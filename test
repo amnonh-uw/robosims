@@ -1,9 +1,13 @@
 #! /bin/bash
 verbose=0
+n=""
 while :; do
     case $1 in
         -v|--verbose)
                 verbose=1
+                ;;
+        -n|--nohup)
+                n=nohup
                 ;;
         *)               # Default case: No more options, so break out of the loop.
                 break
@@ -31,7 +35,7 @@ if [ ! -d "$out_dir" ]; then
 fi
 echo invoke test --config=$config $@|& tee $out_dir/test.out
 if [ $verbose == 1 ]; then
-    nohup invoke test --config=$config $@|& tee $out_dir/test.out
+    $n invoke test --config=$config $@|& tee $out_dir/test.out
 else
-    nohup invoke test --config=$config $ @>& $out_dir/test.out
+    $n invoke test --config=$config $ @>& $out_dir/test.out
 fi

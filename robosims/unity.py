@@ -195,7 +195,7 @@ class UnityGame:
         self.action_counter = 0
 
     def get_state(self):
-        return UnityState(self.s_frame, self.t_frame, self.collision)
+        return UnityState(self.s_frame, self.t_frame, self.s_frame_depth, self.t_frame_depth, self.collision)
 
     def is_episode_finished(self):
         return self.episode_finished
@@ -389,10 +389,15 @@ class UnityGame:
         pos = agent['position']
         rot = agent['rotation']
 
-        assert abs(pos['x'] - x) < 0.01
-        assert abs(pos['y'] - y) < 0.01
-        assert abs(pos['z'] - z) < 0.01
-        assert abs(rot['y'] - r) < 0.01
+        if r >= 360:
+            r -= 360
+        if r < 0:
+            r += 360
+
+        assert abs(pos['x'] - x) < 0.01, "x %f, pos[x] %f" %  (x, pos['x'])
+        assert abs(pos['y'] - y) < 0.01, "y %f, pos[y] %f" %  (x, pos['y'])
+        assert abs(pos['z'] - z) < 0.01, "z %f, pos[z] %f" %  (x, pos['z'])
+        assert abs(rot['y'] - r) < 0.01, "r %f, pos[r] %f" %  (x, pos['r'])
 
         return move_event
 
@@ -412,6 +417,7 @@ class UnityGame:
             self.t_rotation = agent['rotation']
             self.extract_target_pose()
             self.t_frame = self.t.frame
+            self.t_frame_depth = self.t.frame_depth
 
             self.s = self.valid_pose(self.s_x, self.s_y, self.s_z, self.s_r)
             if self.s is None:
@@ -424,10 +430,11 @@ class UnityGame:
 
         if not too_far:
             trans = self.translation(dims=4)
+
             assert abs(trans[0]) - self.conf.max_distance_delta < 0.01, "x %f > max %f" % (trans[0], self.conf.max_distance_delta)
             assert abs(trans[1]) - self.conf.max_distance_delta < 0.01, "y %f > max %f" % (trans[1], self.conf.max_distance_delta)
             assert abs(trans[2]) - self.conf.max_distance_delta < 0.01, "z %f > max %f" % (trans[2], self.conf.max_distance_delta)
-            assert abs(trans[3]) -  self.conf.max_rotation_delta < 0.01, "r %f > max %f" % (trans[3], self.conf.max_rotation_delta)
+#            assert abs(trans[3]) -  self.conf.max_rotation_delta < 0.01, "r %f > max %f" % (trans[3], self.conf.max_rotation_delta)
 
         # print("new episode {}{}-{}{}".format(self.s_pos, self.s_rot, self.t_pos, self.t_rot))
 
@@ -518,9 +525,11 @@ class UnityGame:
         return str(t)
 
 class UnityState:
-    def __init__(self, s_frame, t_frame, collision):
+    def __init__(self, s_frame, t_frame, s_frame_depth, t_frame_depth, collision):
         self.s_frame = s_frame
         self.t_frame = t_frame
+        self.s_frame_depth = s_frame_depth
+        self.t_frame_depth = t_frame_depth
         self.collision = collision
 
     def target_buffer(self):
@@ -528,6 +537,12 @@ class UnityState:
 
     def source_buffer(self):
         return self.s_frame
+
+    def target_depth_buffer(self):
+        return self.t_frame_depth
+
+    def source_depth_buffer(self):
+        return self.s_frame_depth
 
     def sensor_input(self):
         return [self.collision]

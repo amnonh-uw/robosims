@@ -1,10 +1,15 @@
 #! /bin/bash
 verbose=0
+n=""
 while :; do
     case $1 in
         -v|--verbose)
                 verbose=1
                 ;;
+        -n|--nohup)
+                n=nohup
+                ;;
+
         *)               # Default case: No more options, so break out of the loop.
                 break
     esac
@@ -24,7 +29,7 @@ fi
 
 out=`echo $1 | sed "s;.*/;;" | sed "s;\.yaml$;.out;"`
 if [ $verbose == 1 ]; then
-    nohup invoke train --config=$1 |& tee $out 
+    $n invoke train --config=$1 |& tee $out 
 else
-    nohup invoke train --config=$1 >& $out 
+    $n invoke train --config=$1 >& $out 
 fi

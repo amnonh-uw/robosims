@@ -139,6 +139,7 @@ class config(EasyDict):
         # image shape
         self.image_shape = [300, 400, 3]
         self.vert_fov = 60
+        self.near_clip_plane = 0.3
 
         self.sensors = 1
         self.gamma = 0.99
