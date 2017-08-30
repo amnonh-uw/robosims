@@ -28,7 +28,7 @@ class sfm_depth:
 
         self.load(conf)
         self.vert_fov = conf.vert_fov
-        self.near_clip_plane = self.near_clip_plane
+        self.near_clip_plane = conf.near_clip_plane
         self.predict_counter = 0
 
     def load(self, conf):
@@ -56,11 +56,10 @@ class sfm_depth:
 
         aspect_ratio = float(self.raw_w) / float(self.raw_h)
         vert_fov = math.radians(self.vert_fov)
-        near_clip_plane = self.near_clip_plane
-        horz_fov =  2 * math.atan(math.tan(vert_fovr / 2) * aspect_ratio)
+        horz_fov =  2 * math.atan(math.tan(vert_fov / 2) * aspect_ratio)
 
-        fx = near_clip_plane
-        fy = near_clip_plane
+        fx = self.near_clip_plane
+        fy = self.near_clip_plane
         cx = fx * math.tan(0.5 * horz_fov)
         cy = fy * math.tan(0.5 * vert_fov)
 

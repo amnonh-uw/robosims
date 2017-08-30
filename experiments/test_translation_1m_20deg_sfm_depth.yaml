@@ -12,3 +12,4 @@ test_steps: 0
 batch_size: 32
 relative_errors: no
 colocate_gradients_with_ops: no
+checkpoint_dir: /nas-homes/amnonh/checkpoint_20cm_20deg_long_nosmooth_reg2.0/
