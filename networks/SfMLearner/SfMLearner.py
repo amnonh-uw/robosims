@@ -24,11 +24,11 @@ class SfMLearner(object):
                 seed=seed, 
                 shuffle=True,
                 name='image_paths_queue')
-            depth_paths_queue = tf.train.string_input_producer(
-                file_list['depth_file_list'], 
-                seed=seed, 
-                shuffle=True,
-                name='depth_paths_queue')
+            # depth_paths_queue = tf.train.string_input_producer(
+            #    file_list['depth_file_list'], 
+            #    seed=seed, 
+            #    shuffle=True,
+            #    name='depth_paths_queue')
             cam_paths_queue = tf.train.string_input_producer(
                 file_list['cam_file_list'], 
                 seed=seed, 
@@ -276,8 +276,8 @@ class SfMLearner(object):
         with tf.name_scope("parameter_count"):
             parameter_count = tf.reduce_sum([tf.reduce_prod(tf.shape(v)) \
                                             for v in tf.trainable_variables()])
-        # self.saver = tf.train.Saver([var for var in tf.model_variables()] + \
-        self.saver = tf.train.Saver([var for var in tf.trainable_variables)_])] + \
+        # self.saver = tf.train.Saver([var for var in tf.model_variables()] + 
+        self.saver = tf.train.Saver([var for var in tf.trainable_variables()] + \
                                     [self.global_step], 
                                     max_to_keep=20)
         sv = tf.train.Supervisor(logdir=opt.checkpoint_dir, 
@@ -374,12 +374,10 @@ class SfMLearner(object):
             self.pred_poses = pred_poses
 
     def preprocess_image(self, image):
-        print('preprocess_image')
         image = tf.image.convert_image_dtype(image, dtype=tf.float32)
         return image * 2. -1.
 
     def deprocess_image(self, image):
-        print('deprocess_image')
         image = (image + 1.)/2.
         return tf.image.convert_image_dtype(image, dtype=tf.uint8)
 
