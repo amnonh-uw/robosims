@@ -195,7 +195,7 @@ class UnityGame:
         self.action_counter = 0
 
     def get_state(self):
-        return UnityState(self.s_frame, self.t_frame, self.s_frame_depth, self.t_frame_depth, self.collision)
+        return UnityState(self.s_frame, self.t_frame, self.s_frame_depth, self.t_frame_depth, self.t_to_s_frame_flow, self.collision)
 
     def is_episode_finished(self):
         return self.episode_finished
@@ -525,11 +525,12 @@ class UnityGame:
         return str(t)
 
 class UnityState:
-    def __init__(self, s_frame, t_frame, s_frame_depth, t_frame_depth, collision):
+    def __init__(self, s_frame, t_frame, s_frame_depth, t_frame_depth, t_to_s_frame_flow, collision):
         self.s_frame = s_frame
         self.t_frame = t_frame
         self.s_frame_depth = s_frame_depth
         self.t_frame_depth = t_frame_depth
+        self.self.t_to_s_frame_flow = self.t_to_s_frame_flow
         self.collision = collision
 
     def target_buffer(self):
