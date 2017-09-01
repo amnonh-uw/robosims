@@ -8,6 +8,7 @@ import imageio
 import signal
 from robosims.unity import UnityGame
 from PIL import Image, ImageDraw, ImageFont
+import scipy.misc
 
 def make_dirs(default_postfix, args):
     conf = args.conf
@@ -277,3 +278,27 @@ def get_font(fontsize):
         font = ImageFont.load_default()
 
     return font
+
+def save_image(path, im):
+    print('save_image', path, im.dtype)
+    if im.dtype == np.float32:
+        the_max =  np.amax(im)
+        the_min =  np.amin(im)
+        im = (im - the_min)  * 255. / (the_max - the_min)
+        im = im.astype(np.uint8)
+    
+    scipy.misc.imsave(path, im)
+
+def concat_images(imga, imgb):
+    """
+    Combines two color image ndarrays side-by-side.
+    """
+    ha,wa = imga.shape[:2]
+    hb,wb = imgb.shape[:2]
+    assert ha == hb
+    max_height = np.max([ha, hb])
+    total_width = wa+wb
+    new_img = np.zeros(shape=(max_height, total_width, 3), dtype=np.uint8)
+    new_img[:ha,:wa] = imga
+    new_img[:hb,wa:wa+wb] = imgb
+    return new_img

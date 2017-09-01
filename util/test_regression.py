@@ -8,13 +8,18 @@ from util.laplotter import *
 def test(conf, model, predict, steps = 0):
     test_iter = conf.test_iter
 
-    print("testing... {} iterations".format(test_iter))
     if steps == 0:
-        test_dataset = conf.test_dataset
+        testset = conf.testset
+        name = testset
     else:
-        test_dataset = None
+        testset = None
 
-    env = UnityGame(conf, dataset=test_dataset, num_iter=test_iter, randomize=False)
+    if name is None:
+        name = "live game"
+
+    print("testing... {} iterations from {}".format(test_iter, name))
+
+    env = UnityGame(conf, dataset=testset, num_iter=test_iter, randomize=False)
 
     def empty_strings(n):
         l = []

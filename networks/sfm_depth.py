@@ -4,12 +4,13 @@ import numpy as np
 import scipy.misc
 import tensorflow as tf
 import math
+import util
+from util.util import *
 
-sfmdir = "/home/amnonh/SfMLearner"
+sfmdir = "/home/amnonh/robosims/networks/SfMLearner"
 sys.path.insert(0, sfmdir)
 
 from SfMLearner import SfMLearner
-from utils import *
 
 
 class sfm_depth:
@@ -17,7 +18,54 @@ class sfm_depth:
     tf_testable = False
     img_height = 320
     img_width = 416
-    mode = 'all'
+    mode = 'both'
+
+    def predictor(self, t, s, model):
+        self.predict_counter += 1
+        self.directory = 'output/' + str(self.predict_counter)
+        if not os.path.exists(self.directory):
+            os.makedirs(self.directory)
+
+        self.raw_h = t.shape[0]
+        self.raw_w = t.shape[1]
+
+        zoom_y = self.img_height/self.raw_h
+        zoom_x = self.img_width/self.raw_w
+
+        if zoom_x != 1 or zoom_y != 1:
+            s = scipy.misc.imresize(s, (self.img_height, self.img_width))
+            t = scipy.misc.imresize(t, (self.img_height, self.img_width))
+
+        save_image(self.directory + '/' + "resized_source" + '.png', s)
+        save_image(self.directory + '/' + "resized_target" + '.png', s)
+
+        if self.mode == 'depth':
+            fetches = self.fetch_depth(t, s, model)
+
+        if self.mode == 'pose':
+            fetches = self.fetch_both(t, s, model)
+
+        if self.mode == 'both':
+            fetches = self.fetch_both(t, s, model)
+
+        for key in fetches:
+            print(key)
+            if "image" in key or "depth" in key or "disp" in key:
+                im_batch = fetches[key]
+                im = np.squeeze(im_batch, axis=0)
+                if im.shape[2] == 1:
+                    im = np.squeeze(im, axis=2)
+                save_image(self.directory + '/' + key + '.png', im)
+            else:
+                print(key, fetches[key])
+
+        if 'pose' in fetches:
+            pred = fetches['pose']
+            pred_pose = pred[0, :, :]
+            print('pred_pose', pred_pose)
+            return pred_pose
+        else:
+            return np.zeros([1,6])
 
     def __init__(self, conf):
         self.sfm = SfMLearner()
@@ -38,65 +86,17 @@ class sfm_depth:
         self.sess =  tf.Session()
         saver.restore(self.sess, ckpt_file)
 
-    def image_resize(self, im):
-        if self.img_height != self.raw_h or self.img_width != self.raw_w:
-            im = scipy.misc.imresize(im, (self.raw_h, self.raw_w))
-
-        return im
-        
-    def predictor(self, t, s, model):
+    def fetch_both(self, t, s, model):
         # inference assumes that the middle image is the target
-        # so we are transfering two images, the first is the source and the
-        # second is the target
-        self.raw_h = t.shape[0]
-        self.raw_w = t.shape[1]
+        # so we are transfering two images, the first is the target
+        # second is the source
 
-        zoom_y = self.img_height/self.raw_h
-        zoom_x = self.img_width/self.raw_w
+        seq = concat_images(t, s)
+        seq = np.expand_dims(seq, axis=0)
 
-        aspect_ratio = float(self.raw_w) / float(self.raw_h)
-        vert_fov = math.radians(self.vert_fov)
-        horz_fov =  2 * math.atan(math.tan(vert_fov / 2) * aspect_ratio)
+        return =  self.sfm.inference(seq, self.sess, mode=self.mode)
 
-        fx = self.near_clip_plane
-        fy = self.near_clip_plane
-        cx = fx * math.tan(0.5 * horz_fov)
-        cy = fy * math.tan(0.5 * vert_fov)
+    def fetch_depth(self, t, s, model):
+        t = np.expand_dims(t, axis=0)
 
-        if zoom_x != 1 or zoom_y != 1:
-            s = scipy.misc.imresize(s, (self.img_height, self.img_width))
-            t = scipy.misc.imresize(t, (self.img_height, self.img_width))
-            fx *= zoom_x
-            cx *= zoom_x
-            fy *= zoom_y
-            cy *= zoom_y
-        
-        raw_mat_vecs = np.array([[fx,0.,cx,0.,fy,cy,0.,0.,1.]])
-
-        seq = np.hstack((t, s))
-        self.predict_counter += 1
-        directory = 'output/' + str(self.predict_counter)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        fetches = self.sfm.inference([seq[None,:,:,:], raw_mat_vecs], self.sess, mode=self.mode)
-        for key in fetches:
-            if "image" in key or "exp_mask" in key or "proj_error" in key:
-                im_batch = fetches[key]
-                im = np.squeeze(im_batch, axis=0)
-                if im.shape[2] == 1:
-                    im = np.squeeze(im, axis=2)
-                scipy.misc.imsave(directory + '/' + key + '.png', im)
-            else:
-                print(key, fetches[key])
-
-        pred = fetches['pose']
-
-        pred_pose = pred[0, :, :]
-        units = 0.001154661
-        pred_pose[0, 0] /= units
-        pred_pose[0, 1] /= units
-        pred_pose[0, 2] /= units
-        print('pred_pose', pred_pose)
-        return pred_pose
-
+        return self.sfm.inference(t, self.sess, mode=self.mode)

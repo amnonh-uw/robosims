@@ -7,9 +7,11 @@ base_class: sfm_depth
 check_gradients: no
 epochs: 1
 iter: 0
-test_iter: 100
+test_iter: 10
 test_steps: 0
 batch_size: 32
 relative_errors: no
 colocate_gradients_with_ops: no
-checkpoint_dir: /raid/amnonh/checkpoint_20cm_20deg_long_nosmooth_reg2.0/
+test_steps: 0
+checkpoint_dir: /nas-homes/amnonh/checkpoint_20cm_20deg_long_nosmooth_reg2.0/
+testset: /nas-homes/amnonh/datasets/test_20cm_20deg
