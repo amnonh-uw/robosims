@@ -6,5 +6,5 @@ probe_distance: 1.
 grid_distance: 0.01
 grid_rotation: 0.1
 iter: 1000
-epoch: 1
+epochs: 1
 dataset: datasets/test_1m_20deg
