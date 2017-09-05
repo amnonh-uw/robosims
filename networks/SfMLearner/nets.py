@@ -24,9 +24,9 @@ def pose_exp_net(tgt_image, src_image_stack, do_exp=True, is_training=True):
     with tf.variable_scope('pose_exp_net') as sc:
         end_points_collection = sc.original_name_scope + '_end_points'
         with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
-                            normalizer_fn=slim.batch_norm,
+                            # normalizer_fn=slim.batch_norm,
                             weights_regularizer=slim.l2_regularizer(0.05),
-                            normalizer_params=batch_norm_params,
+                            # normalizer_params=batch_norm_params,
                             activation_fn=tf.nn.relu,
                             outputs_collections=end_points_collection):
             # cnv1 to cnv5b are shared between pose and explainability prediction
@@ -80,8 +80,8 @@ def disp_net(tgt_image, is_training=True):
     with tf.variable_scope('depth_net') as sc:
         end_points_collection = sc.original_name_scope + '_end_points'
         with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
-                            normalizer_fn=slim.batch_norm,
-                            normalizer_params=batch_norm_params,
+                            # normalizer_fn=slim.batch_norm,
+                            # normalizer_params=batch_norm_params,
                             weights_regularizer=slim.l2_regularizer(0.05),
                             activation_fn=tf.nn.relu,
                             outputs_collections=end_points_collection):
