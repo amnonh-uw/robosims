@@ -5,6 +5,32 @@ from robosims.unity import UnityGame
 from util.util import *
 from util.laplotter import *
 
+def calibrate(conf, model, predict):
+    test_iter = conf.test_iter
+
+    print("clalibrating... {} iterations".format(test_iter))
+    test_dataset = conf.test_dataset
+
+    env = UnityGame(conf, dataset=test_dataset, num_iter=test_iter, randomize=False)
+
+    gtruth_xyz = np.array([test_iter, 3])
+    pred_xyz = np.array([test_iter, 3])
+
+    for episode_count in range(0, test_iter):
+        env.new_episode()
+        t = env.get_state().target_buffer()
+        s = env.get_state().source_buffer()
+        pred_value = predict(t, s,  model)
+        pred_value = pred_value[0]
+        true_value = model.true_value(env)
+        gtruth_xyz[episode_count, :] = true_value[0:3]
+        pred_xyz[episode_count, :] = pred_value[0:3]
+
+    scale = np.sum(gtruth_xyz * pred_xyz) / np.sum(pred_xyz ** 2)
+    env.close()
+
+    return scale
+
 def test(conf, model, predict, steps = 0):
     test_iter = conf.test_iter
 
