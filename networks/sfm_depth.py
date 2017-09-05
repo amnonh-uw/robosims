@@ -94,7 +94,7 @@ class sfm_depth:
         seq = concat_images(t, s)
         seq = np.expand_dims(seq, axis=0)
 
-        return =  self.sfm.inference(seq, self.sess, mode=self.mode)
+        return self.sfm.inference(seq, self.sess, mode=self.mode)
 
     def fetch_depth(self, t, s, model):
         t = np.expand_dims(t, axis=0)
