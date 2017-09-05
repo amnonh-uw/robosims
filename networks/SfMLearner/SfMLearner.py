@@ -276,8 +276,8 @@ class SfMLearner(object):
         with tf.name_scope("parameter_count"):
             parameter_count = tf.reduce_sum([tf.reduce_prod(tf.shape(v)) \
                                             for v in tf.trainable_variables()])
-        # self.saver = tf.train.Saver([var for var in tf.model_variables()] + 
-        self.saver = tf.train.Saver([var for var in tf.trainable_variables()] + \
+        # self.saver = tf.train.Saver([var for var in tf.trainable_variables()] + 
+        self.saver = tf.train.Saver([var for var in tf.model_variables()] + \
                                     [self.global_step], 
                                     max_to_keep=20)
         sv = tf.train.Supervisor(logdir=opt.checkpoint_dir, 
@@ -332,15 +332,13 @@ class SfMLearner(object):
 
         with tf.name_scope("depth_prediction"):
             pred_disp, _ = disp_net(tgt_image)
-            # pred_disp, _ = disp_net(tgt_image, is_training=False)
             pred_depth = [1./d for d in pred_disp]
 
         with tf.name_scope("pose_and_explainability_prediction"):
             pred_poses, _, _ = \
             pose_exp_net(tgt_image,
                          src_image_stack, 
-                         do_exp=(self.explain_reg_weight > 0),
-                         is_training=False)
+                         do_exp=False)
 
         pred_depth = pred_depth[0]
         self.inputs = input_uint8
@@ -517,7 +515,7 @@ class SfMLearner(object):
         frame_ids = [x.split(' ')[1][:-1] for x in frames]
         image_file_list = [os.path.join(data_root, subfolders[i], 
             frame_ids[i] + '.jpg') for i in range(len(frames))]
-        depth_file_list = [os.path.join(data_root, subfolders[i], 
+        depth_file_list = [os.path.join(data_root + 'depth', subfolders[i], 
             frame_ids[i] + '_depth' + '.jpg') for i in range(len(frames))]
         cam_file_list = [os.path.join(data_root, subfolders[i], 
             frame_ids[i] + '_cam.txt') for i in range(len(frames))]
