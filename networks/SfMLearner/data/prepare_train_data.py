@@ -43,15 +43,15 @@ def dump_example(n):
     cx = intrinsics[0, 2]
     cy = intrinsics[1, 2]
     dump_dir = os.path.join(args.dump_root, example['folder_name'])
-    # if not os.path.isdir(dump_dir):
-    #     os.makedirs(dump_dir, exist_ok=True)
+    depth_dump_dir = dump_dir + '_depth'
     try: 
         os.makedirs(dump_dir)
+        os.makedirs(depth_dump_dir)
     except OSError:
-        if not os.path.isdir(dump_dir):
+        if not os.path.isdir(dump_dir) or not os.path.isdir(depth_dump_dir):
             raise
     dump_img_file = dump_dir + '/%s.jpg' % example['file_name']
-    dump_depth_file = dump_dir + '/%s_depth.jpg' % example['file_name'] 
+    dump_depth_file = depth_dump_dir + '/%s_depth.jpg' % example['file_name'] 
     dump_cam_file = dump_dir + '/%s_cam.txt' % example['file_name']
     scipy.misc.imsave(dump_img_file, image_seq.astype(np.uint8))
     if depth_seq is not None:
