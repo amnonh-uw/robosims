@@ -530,7 +530,7 @@ class UnityState:
         self.t_frame = t_frame
         self.s_frame_depth = s_frame_depth
         self.t_frame_depth = t_frame_depth
-        self.self.t_to_s_frame_flow = self.t_to_s_frame_flow
+        self.t_to_s_frame_flow = t_to_s_frame_flow
         self.collision = collision
 
     def target_buffer(self):
