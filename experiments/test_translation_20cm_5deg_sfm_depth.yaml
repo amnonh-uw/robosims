@@ -1,5 +1,5 @@
 max_distance_delta: 0.2
-max_rotation_delta: 20.
+max_rotation_delta: 5.
 pose_dims: 4
 model: translation
 cheat: no
@@ -7,11 +7,9 @@ base_class: sfm_depth
 check_gradients: no
 epochs: 1
 iter: 0
-test_iter: 10
+test_iter: 100
 test_steps: 0
 batch_size: 32
 relative_errors: no
 colocate_gradients_with_ops: no
-test_steps: 0
-checkpoint_dir: /nas-homes/amnonh/checkpoint_unity_20cm_20deg_long_smooth0_reg2.0_bacth_norm/
-testset: /nas-homes/amnonh/datasets/test_20cm_20deg
+checkpoint_dir: /nas-homes/amnonh/checkpoint_unity_20cm_5deg_long/

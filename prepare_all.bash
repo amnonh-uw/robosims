@@ -1,0 +1,3 @@
+python networks/SfMLearner/data/prepare_train_data.py --dataset_name unity --config_path /home/amnonh/robosims/gen_dataset/1m_20deg.yaml --dump_root /raid/amnonh/prepared/unity_1m_20deg --seq_length 2 --num_threads 1 --img_width 416 --img_height 320 &
+python networks/SfMLearner/data/prepare_train_data.py --dataset_name unity --config_path /home/amnonh/robosims/gen_dataset/20cm_20deg.yaml --dump_root /raid/amnonh/prepared/unity_20cm_20deg --seq_length 2 --num_threads 1 --img_width 416 --img_height 320 &
+python networks/SfMLearner/data/prepare_train_data.py --dataset_name unity --config_path /home/amnonh/robosims/gen_dataset/20cm_5deg.yaml --dump_root /raid/amnonh/prepared/unity_20cm_5deg --seq_length 2 --num_threads 1 --img_width 416 --img_height 320 &
